@@ -163,13 +163,20 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
         temperature: opt.temperature || 0.9,
         topP: opt.topP || 0.95,
         topK: opt.tokK || 16
-      },
-      tools: [
+      }
+    }
+    if (this.tools?.length > 0) {
+      body.tools = [
         {
-          functionDeclarations: this.tools.map(tool => tool.function())
+          function_declarations: this.tools.map(tool => tool.function())
           // codeExecution: {}
         }
       ]
+      body.tool_config = {
+        function_calling_config: {
+          mode: 'ANY'
+        }
+      }
     }
     if (opt.image) {
       delete body.tools
