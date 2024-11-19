@@ -172,12 +172,12 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
           // codeExecution: {}
         }
       ]
-      // 笑死人的效果
-      // body.tool_config = {
-      //   function_calling_config: {
-      //     mode: 'ANY'
-      //   }
-      // }
+      // ANY要笑死人的效果
+      body.tool_config = {
+        function_calling_config: {
+          mode: 'AUTO'
+        }
+      }
     }
     if (opt.image) {
       delete body.tools
