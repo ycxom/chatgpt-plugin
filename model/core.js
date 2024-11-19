@@ -873,13 +873,13 @@ class Core {
         // 如果配了proxy(或者不在国内)，而且有反代，但是没开启强制反代,将baseurl删掉
         delete opts.apiBaseUrl
       }
-      const client = new OpenAI({
-        apiKey: Config.apiKey,
-        baseURL: opts.apiBaseUrl,
-        fetch: newFetch
-      })
+      // const client = new OpenAI({
+      //   apiKey: Config.apiKey,
+      //   baseURL: opts.apiBaseUrl,
+      //   fetch: newFetch
+      // })
 
-      // this.chatGPTApi = new ChatGPTAPI(opts)
+      this.chatGPTApi = new ChatGPTAPI(opts)
       let option = {
         timeoutMs: 600000,
         completionParams,
@@ -1065,7 +1065,7 @@ async function collectTools (e) {
   }
   let systemAddition = ''
   if (e.isGroup) {
-    let botInfo = await e.bot.getGroupMemberInfo(e.group_id, getUin(e), true)
+    let botInfo = await e.bot?.pickMember?.(e.group_id, getUin(e), true) || await e.bot?.getGroupMemberInfo?.(e.group_id, getUin(e), true)
     if (botInfo.role !== 'member') {
       // 管理员才给这些工具
       tools.push(...[new EditCardTool(), new JinyanTool(), new KickOutTool(), new HandleMessageMsgTool(), new SetTitleTool()])
