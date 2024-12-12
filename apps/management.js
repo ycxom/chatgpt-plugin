@@ -341,6 +341,11 @@ export class ChatgptManagement extends plugin {
           reg: '^#chatgpt(开启|关闭)(工具箱|后台服务)$',
           fnc: 'switchToolbox',
           permission: 'master'
+        },
+        {
+          reg: '^#chatgpt(开启|关闭)gemini(搜索|代码执行)$',
+          fnc: 'geminiOpenSearchCE',
+          permission: 'master'
         }
       ]
     })
@@ -1826,5 +1831,18 @@ azure语音：Azure 语音是微软 Azure 平台提供的一项语音服务，�
       await stopServer()
       await this.reply('好的，已经关闭工具箱')
     }
+  }
+
+  async geminiOpenSearchCE (e) {
+    let msg = e.msg
+    let open = msg.includes('开启')
+    if (msg.includes('搜索')) {
+      Config.geminiEnableGoogleSearch = open
+      open && (Config.geminiEnableCodeExecution = !open)
+    } else {
+      Config.geminiEnableCodeExecution = open
+      open && (Config.geminiEnableGoogleSearch = !open)
+    }
+    await e.reply('操作成功')
   }
 }
