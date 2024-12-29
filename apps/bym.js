@@ -69,10 +69,10 @@ export class bym extends plugin {
     let group = e.group_id
     let prop = Math.floor(Math.random() * 100)
     if (Config.assistantLabel && e.msg?.includes(Config.assistantLabel)) {
-      prop = prop / 100
+      prop = -1
     }
     if (e.msg?.endsWith('？')) {
-      prop = prop / 100
+      prop = prop / 10
     }
 
     let fuck = false
