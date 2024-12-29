@@ -228,6 +228,7 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
       delete content.parentMessageId
       delete content.conversationId
     })
+    // logger.info(JSON.stringify(body))
     let result = await newFetch(url, {
       method: 'POST',
       body: JSON.stringify(body),
@@ -366,20 +367,37 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
  */
 function handleSearchResponse (responseContent) {
   let final = ''
-  for (let part of responseContent.parts) {
+
+  // 遍历每个 part 并处理
+  responseContent.parts = responseContent.parts.map((part) => {
+    let newText = ''
+
     if (part.text) {
-      final += part.text
+      newText += part.text
+      final += part.text // 累积到 final
     }
     if (part.executableCode) {
-      final += '\n执行代码：\n' + '```' + part.executableCode.language + '\n' + part.executableCode.code.trim() + '\n```\n\n'
+      const codeBlock = '\n执行代码：\n' + '```' + part.executableCode.language + '\n' + part.executableCode.code.trim() + '\n```\n\n'
+      newText += codeBlock
+      final += codeBlock // 累积到 final
     }
     if (part.codeExecutionResult) {
-      final += `\n执行结果(${part.codeExecutionResult.outcome})：\n` + '```\n' + part.codeExecutionResult.output + '\n```\n\n'
+      const resultBlock = `\n执行结果(${part.codeExecutionResult.outcome})：\n` + '```\n' + part.codeExecutionResult.output + '\n```\n\n'
+      newText += resultBlock
+      final += resultBlock // 累积到 final
     }
-  }
-  responseContent.parts = [{
-    text: final
-  }]
+
+    // 返回更新后的 part，但不设置空的 text
+    const updatedPart = { ...part }
+    if (newText) {
+      updatedPart.text = newText // 仅在 newText 非空时设置 text
+    } else {
+      delete updatedPart.text // 如果 newText 是空的，则删除 text 字段
+    }
+
+    return updatedPart
+  })
+
   return {
     final,
     responseContent
