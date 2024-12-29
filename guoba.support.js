@@ -999,6 +999,47 @@ export function supportGuoba () {
           component: 'Input'
         },
         {
+          field: 'returnQQ',
+          label: '伪人模式黑名单彻底黑名单',
+          bottomHelpMessage: '若是匹配仁qq，直接连聊天记录都过滤掉',
+          component: 'InputTextArea'
+        },
+        {
+          field: "GroupList",
+          label: "群聊设置",
+          bottomHelpMessage: "单独设置群聊触发",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "id",
+                label: "QQ群",
+                component: "Input",
+                required: true,
+              },
+              {
+                field: "propNum",
+                label: "触发概率",
+                component: "Input",
+                required: true,
+              },
+              {
+                field: "chatslist",
+                label: "群聊聊天记录长度",
+                component: "Input",
+                required: true,
+              },
+              {
+                field: "maxtext",
+                label: "用户最大长度限制",
+                component: "Input",
+                required: true,
+              }
+            ],
+          },
+        },
+        {
           label: '以下为Azure chatGPT的配置',
           component: 'Divider'
         },
