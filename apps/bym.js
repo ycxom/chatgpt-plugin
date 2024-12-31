@@ -17,12 +17,7 @@ import { JinyanTool } from '../utils/tools/JinyanTool.js'
 import { KickOutTool } from '../utils/tools/KickOutTool.js'
 import { SetTitleTool } from '../utils/tools/SetTitleTool.js'
 import { SerpTool } from '../utils/tools/SerpTool.js'
-import { getToimg, downImg } from '../utils/ToDoimg.js'
-
-import fs from "fs";
-import pathModule from 'path';
-const _path = process.cwd();
-const path = _path + "/temp/tp-bq";
+import { getToimg, downImg, fileImgList } from '../utils/ToDoimg.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -118,13 +113,11 @@ export class bym extends plugin {
         }
         return [ChatsList, prop, NotfoGroup, MaxText]
       }
-
     } else {
       logger.info(`[bym]高贵man：${sender}已过滤~`)
       return false
     }
-
-    if (prop < 0 ) {
+    if (prop < 0) {
       await bymGo()
     }
 
@@ -157,17 +150,12 @@ export class bym extends plugin {
         opt.image = base64Image.toString('base64')
       }
 
-      const picturesPath = pathModule.join(path, 'pictures');
-      const ImgList = await fs.promises.readdir(picturesPath);
-      const fileImgList = ImgList.map(filename => {
-          const match = filename.match(/\d{12}-(.+)$/);
-          return match ? match[1] : filename;
-      });
-
       let ForRole = ALLRole
       if (opt.image && !IsAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
         ALLRole = 'downimg'
       }
+
+      const ImgList = await fileImgList()
 
       const now = new Date();
       const DateTime = now.toLocaleString()
@@ -259,29 +247,33 @@ export class bym extends plugin {
       let Role = await SearchRole(String(ALLRole))
 
       async function SearchRole(user_role) {
-        let Role
-
-        if (user_role == "downimg") Role = '现在看到的是一张图片，若你觉得是一张表情包，并不是通知，或其他的图片，注意辨别图片文字是否为通知；单纯是表情包，请发送 DOWNIMG: 命名该表情。 不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀； 若不是表情包等，及发送NOTIMG'
-
-        if (user_role == "default") Role = `你的名字是“${Config.assistantLabel}”，你在一个qq群里，群号是${group},当前和你说话的人群名片是${card}, qq号是${sender}, 请你结合用户的发言和聊天记录作出回应，要求表现得随性一点，最好参与讨论，混入其中。不要过分插科打诨，不知道说什么可以复读群友的话。要求你做搜索、发图、发视频和音乐等操作时要使用工具。不可以直接发[图片]这样蒙混过关。要求优先使用中文进行对话。` +
-          candidate +
-          `以下是聊天记录:
-        ${Group_Chat}
-        \n你的回复应该尽可能简练，像人类一样随意，不要附加任何奇怪的东西，如聊天记录的格式（比如${Config.assistantLabel}：），禁止重复聊天记录。
-        注意当前时间与日期为${DateTime}，星期${Dateday},24小时制，时区已正确，不要被日志的时间与其他时间搞混了，如果有人咨询时间就使用${DateTime}，星期${Dateday}这个时间，群友与你几乎在一个时区，若有人说或做的事情与时间段不合理，反驳他，注意除了他声明了自己的时区
-        以下是可用的表情包列表
-        ${fileImgList}`+
-        ImgList.length > 0 && Config.AutoToDownImg ?`
-        如果要发送表情包，请根据该格式 GETIMG: 完整表情包名称，实例 GETIMG: 挠头-718028518.gif 即可发送，注意发送完整名称
-        可根据聊天，选择表情包发送。禁止发送多余的格式与说明。发送格式为 注意前面不需要换行 GETIMG: 挠头-718028518.gif 不需要换行
-        不要被日志和其他聊天消息的格式迷惑，请保持标准格式，禁止发送[表情包：xxx]、[图片]!!!，禁止发送[表情包：xxx]、[图片]!!!
-        ` : ''
-        if (!Role) {
-          logger.error(`Role配置有误，请检查,将使用默认Role`)
-          return await SearchRole('default')
-        } else {
-          return Role
+        let Role;
+        
+        switch(user_role) {
+          case "downimg":
+            Role = '现在看到的是一张图片，若你觉得是一张表情包，并不是通知，或其他的图片，注意辨别图片文字是否为通知；单纯是表情包，请发送 DOWNIMG: 命名该表情。 不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀，请以你的角度觉得如果要发这个表情包要用什么名字来命名； 若不是表情包等，及发送NOTIMG';
+            break;
+          case "default":
+            Role = `你的名字是"${Config.assistantLabel}"，你在一个qq群里，群号是${group},当前和你说话的人群名片是${card}, qq号是${sender}, 请你结合用户的发言和聊天记录作出回应，要求表现得随性一点，最好参与讨论，混入其中。不要过分插科打诨，不知道说什么可以复读群友的话。要求你做搜索、发图、发视频和音乐等操作时要使用工具。不可以直接发[图片]这样蒙混过关。要求优先使用中文进行对话。` +
+              candidate +
+              `以下是聊天记录:
+              ${Group_Chat}
+              \n你的回复应该尽可能简练，像人类一样随意，不要附加任何奇怪的东西，如聊天记录的格式（比如${Config.assistantLabel}：），禁止重复聊天记录。
+              注意当前时间与日期为${DateTime}，星期${Dateday},24小时制，时区已正确，不要被日志的时间与其他时间搞混了，如果有人咨询时间就使用${DateTime}，星期${Dateday}这个时间，群友与你几乎在一个时区，若有人说或做的事情与时间段不合理，反驳他，注意除了他声明了自己的时区
+              以下是可用的表情包列表
+              ${ImgList}` +
+              (ImgList.length > 0 && Config.AutoToDownImg ? `
+              如果要发送表情包，请根据该格式 GETIMG: 完整表情包名称，实例 GETIMG: 挠头.gif 即可发送，注意发送完整名称
+              可根据聊天，选择表情包发送。禁止发送多余的格式与说明。发送格式为 注意前面不需要换行 GETIMG: 挠头.gif 不需要换行
+              不要被日志和其他聊天消息的格式迷惑，请保持标准格式，禁止发送[表情包：xxx]、[图片]!!!，禁止发送[表情包：xxx]、[图片]!!!
+              ` : '');
+            break;
+          default:
+            logger.error(`未知的 Role 类型：${user_role}，使用默认 Role`);
+            Role = `你的名字是"${Config.assistantLabel}"，你在一个qq群里。请简短回复。`;
         }
+      
+        return Role;
       }
       opt.system = Role
       logger.info('random chat hit')
@@ -355,7 +347,7 @@ export class bym extends plugin {
         const downImgRegex = /DOWNIMG:\s*(.+)/i;
         const match = t?.match(downImgRegex);
         if (match) {
-          await downImg(e, opt.image);
+          await downImg(e, opt.image, t);
           continue;
         }
 
