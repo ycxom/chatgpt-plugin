@@ -16,7 +16,7 @@ import { EditCardTool } from '../utils/tools/EditCardTool.js'
 import { JinyanTool } from '../utils/tools/JinyanTool.js'
 import { KickOutTool } from '../utils/tools/KickOutTool.js'
 import { SetTitleTool } from '../utils/tools/SetTitleTool.js'
-import {SerpTool} from '../utils/tools/SerpTool.js'
+import { SerpTool } from '../utils/tools/SerpTool.js'
 
 import fs from "fs";
 import { fileTypeFromBuffer } from 'file-type';
@@ -24,6 +24,26 @@ import moment from 'moment';
 import pathModule from 'path';
 const _path = process.cwd();
 const path = _path + "/temp/tp-bq";
+
+const DefaultConfig = {
+  returnQQ: [],
+  GroupList: [],
+  UserList: [],
+  enableBYM: true,
+  assistantLabel: ["ChatGPT"],
+  bymPreset: [],
+  bymFuckPrompt: "",
+  blockWords: [],
+  AutoToDownImg: false,
+  debug: false
+}
+
+if (!fs.existsSync(path)) {
+  fs.mkdirSync(path, { recursive: true })
+}
+if (!fs.existsSync(pathModule.join(path, 'pictures'))) {
+  fs.mkdirSync(pathModule.join(path, 'pictures'), { recursive: true })
+}
 
 // 轻微黑名单用户
 let RoleFalseUser = []
@@ -45,6 +65,19 @@ export class bym extends plugin {
         }
       ]
     })
+    if (typeof Config.assistantLabel === 'string') {
+      Config.assistantLabel = [Config.assistantLabel]
+    }
+    Config.assistantLabel = Config.assistantLabel || DefaultConfig.assistantLabel
+    Config.returnQQ = Config.returnQQ || DefaultConfig.returnQQ
+    Config.GroupList = Config.GroupList || DefaultConfig.GroupList
+    Config.UserList = Config.UserList || DefaultConfig.UserList
+    Config.enableBYM = Config.enableBYM ?? DefaultConfig.enableBYM
+    Config.bymPreset = Config.bymPreset || DefaultConfig.bymPreset
+    Config.bymFuckPrompt = Config.bymFuckPrompt || DefaultConfig.bymFuckPrompt
+    Config.blockWords = Config.blockWords || DefaultConfig.blockWords
+    Config.AutoToDownImg = Config.AutoToDownImg ?? DefaultConfig.AutoToDownImg
+    Config.debug = Config.debug ?? DefaultConfig.debug
   }
 
   /** 复读 */
@@ -417,11 +450,11 @@ export class bym extends plugin {
           let finalMsg = await convertFaces(t, true, e)
           logger.info(JSON.stringify(finalMsg))
           if (Math.floor(Math.random() * 100) < 10) {
-            await this.reply(finalMsg, true, {
+            await e.reply(finalMsg, true, {
               recallMsg: RecallMsg ? 10 : 0
             })
           } else {
-            await this.reply(finalMsg, false, {
+            await e.reply(finalMsg, false, {
               recallMsg: RecallMsg ? 10 : 0
             })
           }
