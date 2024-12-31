@@ -91,15 +91,17 @@ export class bym extends plugin {
       const user_data = await ReadArr(sender, Config.UserList)
       MaxText = user_data[3] !== group_data[3] ? user_data[3] : group_data[3]
       prop = user_data[2] ? user_data[1] : group_data[1]
+
+      console.log(prop)
       ChatsList = group_data[0]
       if (Config.assistantLabel.some(UserMsg => e.msg?.toLowerCase().includes(UserMsg.toLowerCase())) || atbot) {
-        prop = 0
+        prop = -1
         IsAtBot = true
       } else {
         if (Config.UserList.some(index => index.id === sender)) {
           if (user_data[2]) logger.info(`单独概率用户`)
         }
-        if (user_data[2] && !Config.some(Id => group.includes(Id)) && !Config.GroupList.length) return
+        if (user_data[2] && !Config.UserList.some(Id => group.includes(Id)) && !Config.GroupList.length) return false
       }
       async function ReadArr(i, arrlist) {
         let NotfoGroup
@@ -114,7 +116,7 @@ export class bym extends plugin {
             }
           }
           ServerProp -= prop
-          prop = Math.max(0, ServerProp)
+          prop = Math.max(-1, ServerProp)
         }
         return [ChatsList, prop, NotfoGroup, MaxText]
       }
@@ -124,7 +126,7 @@ export class bym extends plugin {
       return false
     }
 
-    if (prop < 1) {
+    if (prop < 0 ) {
       await bymGo()
     }
 
