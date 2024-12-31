@@ -91,8 +91,6 @@ export class bym extends plugin {
       const user_data = await ReadArr(sender, Config.UserList)
       MaxText = user_data[3] !== group_data[3] ? user_data[3] : group_data[3]
       prop = user_data[2] ? user_data[1] : group_data[1]
-
-      console.log(prop)
       ChatsList = group_data[0]
       if (Config.assistantLabel.some(UserMsg => e.msg?.toLowerCase().includes(UserMsg.toLowerCase())) || atbot) {
         prop = -1
