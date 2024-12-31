@@ -305,6 +305,9 @@ export class bym extends plugin {
       if (Config.azSerpKey) {
         tools.push(new SerpTool())
       }
+      if (Config.azSerpKey) {
+        tools.push(new SerpTool())
+      }
       if (e.group.is_admin || e.group.is_owner) {
         tools.push(new EditCardTool())
         tools.push(new JinyanTool())
@@ -349,7 +352,7 @@ export class bym extends plugin {
           await downImg(e, opt.image);
           continue;
         }
-        
+
         if (t) {
           let finalMsg = await convertFaces(t, true, e)
           logger.info(JSON.stringify(finalMsg))
