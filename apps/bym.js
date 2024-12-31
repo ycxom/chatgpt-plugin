@@ -90,7 +90,7 @@ export class bym extends plugin {
         '以下是聊天记录:' + chats
           .map(chat => {
             let sender = chat.sender || chat || {}
-            return `${sender.card || sender.nickname} ：${chat.raw_message}`
+            return `${sender.card || sender.nickname}(${sender.user_id}) ：${chat.raw_message}`
           })
           .join('\n') +
         `\n你的回复应该尽可能简练，像人类一样随意，不要附加任何奇怪的东西，如聊天记录的格式（比如${Config.assistantLabel}：），禁止重复聊天记录。`
