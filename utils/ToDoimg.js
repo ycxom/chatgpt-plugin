@@ -1,3 +1,4 @@
+import fs from "fs";
 import pathModule from 'path';
 import { fileTypeFromBuffer } from 'file-type';
 import moment from 'moment';
