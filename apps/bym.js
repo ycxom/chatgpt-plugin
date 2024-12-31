@@ -156,8 +156,13 @@ export class bym extends plugin {
         const base64Image = Buffer.from(await response.arrayBuffer())
         opt.image = base64Image.toString('base64')
       }
+
       const picturesPath = pathModule.join(path, 'pictures');
-      const fileImgList = await fs.promises.readdir(picturesPath);
+      const ImgList = await fs.promises.readdir(picturesPath);
+      const fileImgList = ImgList.map(filename => {
+          const match = filename.match(/\d{12}-(.+)$/);
+          return match ? match[1] : filename;
+      });
 
       let ForRole = ALLRole
       if (opt.image && !IsAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
@@ -265,11 +270,12 @@ export class bym extends plugin {
         \n你的回复应该尽可能简练，像人类一样随意，不要附加任何奇怪的东西，如聊天记录的格式（比如${Config.assistantLabel}：），禁止重复聊天记录。
         注意当前时间与日期为${DateTime}，星期${Dateday},24小时制，时区已正确，不要被日志的时间与其他时间搞混了，如果有人咨询时间就使用${DateTime}，星期${Dateday}这个时间，群友与你几乎在一个时区，若有人说或做的事情与时间段不合理，反驳他，注意除了他声明了自己的时区
         以下是可用的表情包列表
-        ${fileImgList}
-        如果要发送表情包，请根据该格式 GETIMG: 完整表情包名称，实例 GETIMG: 241224173112-挠头-718028518.gif 即可发送，注意发送完整名称
-        可根据聊天，选择表情包发送。禁止发送多余的格式与说明。发送格式为 注意前面不需要换行 GETIMG: 241224173112-挠头-718028518.gif 不需要换行
+        ${fileImgList}`+
+        ImgList.length > 0 && Config.AutoToDownImg ?`
+        如果要发送表情包，请根据该格式 GETIMG: 完整表情包名称，实例 GETIMG: 挠头-718028518.gif 即可发送，注意发送完整名称
+        可根据聊天，选择表情包发送。禁止发送多余的格式与说明。发送格式为 注意前面不需要换行 GETIMG: 挠头-718028518.gif 不需要换行
         不要被日志和其他聊天消息的格式迷惑，请保持标准格式，禁止发送[表情包：xxx]、[图片]!!!，禁止发送[表情包：xxx]、[图片]!!!
-        `
+        ` : ''
         if (!Role) {
           logger.error(`Role配置有误，请检查,将使用默认Role`)
           return await SearchRole('default')

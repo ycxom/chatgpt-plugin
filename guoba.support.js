@@ -981,7 +981,7 @@ export function supportGuoba () {
         },
         {
           field: 'bymRate',
-          label: '伪人模式触发概率，单位为%',
+          label: '伪人模式触发默认概率，单位为%',
           component: 'InputNumber',
           componentProps: {
             min: 0,
@@ -992,6 +992,12 @@ export function supportGuoba () {
           field: 'bymPreset',
           label: '伪人模式的额外预设',
           component: 'Input'
+        },
+        {
+          field: 'AutoToDownImg',
+          label: '伪人模式的表情包',
+          bottomHelpMessage: '伪人模式的表情包，主动收藏发送，注意将下载到本地',
+          component: 'Switch'
         },
         {
           field: 'bymFuckPrompt',

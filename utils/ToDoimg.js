@@ -40,7 +40,8 @@ export async function getToimg(e, tag) {
             logger.warn(`未找到匹配的表情包: ${sanitizedTag}`);
             return;
         }
-        const selectedFile = matchedFiles[0];
+        // 随机选择一个文件
+        const selectedFile = matchedFiles[Math.floor(Math.random() * matchedFiles.length)];
         const picPath = pathModule.join(picturesPath, selectedFile);
         try {
             await fs.promises.access(picPath);
