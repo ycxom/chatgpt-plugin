@@ -99,21 +99,21 @@ export class bym extends plugin {
         if (Config.UserList.some(index => index.id === sender)) {
           if (user_data[2]) logger.info(`单独概率用户`)
         }
-        if (user_data[2] && !group && !Config.GroupList.length) return
+        if (user_data[2] && !Config.some(Id => group.includes(Id)) && !Config.GroupList.length) return
       }
       async function ReadArr(i, arrlist) {
         let NotfoGroup
-        if (arrlist.some(index => index.id === i)) {
+        if (arrlist.some(index => String(index.id) === String(i))) {
           let ServerProp = prop
           for (let user of arrlist) {
-            if (user.id === i) {
-              ChatsList = user?.chatslist || ChatsList
-              prop = user?.propNum || prop
+            if (String(user.id) === String(i)) {
+              ChatsList = parseInt(user?.chatslist) || ChatsList
+              prop = parseInt(user?.propNum) || prop
               NotfoGroup = user?.notofgroup || false
-              MaxText = user?.maxtext || MaxText
+              MaxText = parseInt(user?.maxtext) || MaxText
             }
           }
-          ServerProp -= Math.floor(prop * Math.random())
+          ServerProp -= prop
           prop = Math.max(0, ServerProp)
         }
         return [ChatsList, prop, NotfoGroup, MaxText]
