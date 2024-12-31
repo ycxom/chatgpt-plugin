@@ -154,9 +154,9 @@ export class bym extends plugin {
       if (opt.image && !IsAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
         ALLRole = 'downimg'
       }
-
+      
       const ImgList = await fileImgList()
-
+      
       const now = new Date();
       const DateTime = now.toLocaleString()
       let Dateday = now.getDay() === 0 ? '日' : now.getDay()
@@ -170,8 +170,9 @@ export class bym extends plugin {
       const txmod = [
         '"app":"com.tencent.multimsg","config"',
         '"app":"com.tencent.structmsg","config"'
-
+        
       ]
+      let candidate = Config.bymPreset
       function replaceUserInput(input) {
         let result = input;
         for (let [key, value] of Object.entries(replaceWords)) {
@@ -183,7 +184,7 @@ export class bym extends plugin {
         if (e.msg) {
           const originalMsg = e.msg;
           const replacedMsg = replaceUserInput(e.msg);
-
+          
           if (originalMsg !== replacedMsg) {
             e.msg = replacedMsg;
           }
@@ -192,7 +193,7 @@ export class bym extends plugin {
         if (Config.bymPreset.some(UserMsg => e.msg?.toLowerCase().includes(UserMsg.toLowerCase()))) {
           logger.info('！！！Bot被骂了，主动回击已经启动！！！')
           RecallMsg = true
-          candidate = candidate + Config.bymFuckPrompt
+          candidate += Config.bymFuckPrompt
         }
 
         if (e.msg.length >= MaxText && !txmod.some(UserMsg => e.msg?.includes(UserMsg))) {
@@ -234,7 +235,6 @@ export class bym extends plugin {
 
       let chats = await getChatHistoryGroup(e, ChatsList)
 
-      let candidate = Config.bymPreset
       chats = chats
         .filter(chat => !Config.returnQQ.includes(chat.user_id))
         .sort((a, b) => a.time - b.time);
