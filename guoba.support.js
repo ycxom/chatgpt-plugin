@@ -1046,6 +1046,41 @@ export function supportGuoba () {
           },
         },
         {
+          field: "UserList",
+          label: "个人设置",
+          bottomHelpMessage: "单独设置个人条件",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "id",
+                label: "QQ号",
+                component: "Input",
+                required: true,
+              },
+              {
+                field: "propNum",
+                label: "触发概率",
+                component: "Input",
+                required: true,
+              },
+              {
+                field: "notofgroup",
+                label: "是否不与群聊概率相关",
+                component: "Switch",
+                required: true,
+              },
+              {
+                field: "maxtext",
+                label: "用户最大长度限制",
+                component: "Input",
+                required: true,
+              }
+            ],
+          },
+        },
+        {
           label: '以下为Azure chatGPT的配置',
           component: 'Divider'
         },
