@@ -134,34 +134,50 @@ export class bym extends plugin {
       let opt = {
         maxOutputTokens: 500,
         temperature: 1,
-        replyPureTextCallback: e.reply
+        replyPureTextCallback: e.reply,
+        images: []
       }
       let imgs = await getImg(e)
+      // 处理图片
       if (!e.msg) {
         if (imgs?.length > 0) {
-          let image = imgs[0]
-          const response = await fetch(image)
-          const base64Image = Buffer.from(await response.arrayBuffer())
-          opt.image = base64Image.toString('base64')
-          e.msg = '[图片]'
+          // 并行处理多张图片
+          opt.images = await Promise.all(imgs.map(async image => {
+            try {
+              const response = await fetch(image)
+              const base64Image = Buffer.from(await response.arrayBuffer())
+              return base64Image.toString('base64')
+            } catch (error) {
+              logger.error(`处理图片失败: ${error}`)
+              return null
+            }
+          })).then(results => results.filter(Boolean))
+
+          e.msg = `[${opt.images.length}张图片]`
         } else {
           return setTimeout(async () => {
             e.msg = '我单纯只是at了你，根据群聊内容回应'
             await bymGo()
-          }, 3000);
-
+          }, 3000)
         }
+      } else if (imgs?.length > 0 && !opt.images.length) {
+        // 处理有消息且有图片的情况
+        opt.images = await Promise.all(imgs.map(async image => {
+          try {
+            const response = await fetch(image)
+            const base64Image = Buffer.from(await response.arrayBuffer())
+            return base64Image.toString('base64')
+          } catch (error) {
+            logger.error(`处理图片失败: ${error}`)
+            return null
+          }
+        })).then(results => results.filter(Boolean))
       }
-      if (!opt.image && imgs?.length > 0) {
-        let image = imgs[0]
-        const response = await fetch(image)
-        const base64Image = Buffer.from(await response.arrayBuffer())
-        opt.image = base64Image.toString('base64')
-      }
+
       logger.info('[bymGo] 开始处理回复')
 
       let previousRole = ALLRole
-      if (opt.image && !context.isAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
+      if (opt.images?.length > 0 && !context.isAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
         ALLRole = 'downimg'
       }
 
@@ -252,7 +268,7 @@ export class bym extends plugin {
 
         switch (user_role) {
           case "downimg":
-            Role = '现在看到的是一张图片，若你觉得是一张表情包，并不是通知，或其他的图片，注意辨别图片文字是否为通知；单纯是表情包，请发送 DOWNIMG: 命名该表情。 不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀，请以你的角度觉得如果要发这个表情包要用什么名字来命名； 若不是表情包等，及发送NOTIMG';
+            Role = `现在看到的是${opt.images.length}张图片（从第1张到第${opt.images.length}张），请依次查看各张图片。若觉得是表情包，并不是通知或其他类型的图片，请发送 DOWNIMG: 命名该表情。不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀；若不是表情包等，请发送NOTIMG并对图片内容进行分析描述。注意：请从第1张图片开始依次描述。`;
             break;
           case "default":
             Role = `你的名字是"${Config.assistantLabel}"，你在一个qq群里，群号是${group},当前和你说话的人群名片是${card}, qq号是${sender}, 请你结合用户的发言和聊天记录作出回应，要求表现得随性一点，最好参与讨论，混入其中。不要过分插科打诨，不知道说什么可以复读群友的话。要求你做搜索、发图、发视频和音乐等操作时要使用工具。不可以直接发[图片]这样蒙混过关。要求优先使用中文进行对话。` +
@@ -297,9 +313,6 @@ export class bym extends plugin {
       if (Config.azSerpKey) {
         tools.push(new SerpTool())
       }
-      if (Config.azSerpKey) {
-        tools.push(new SerpTool())
-      }
       if (e.group.is_admin || e.group.is_owner) {
         tools.push(new EditCardTool())
         tools.push(new JinyanTool())
@@ -321,7 +334,7 @@ export class bym extends plugin {
       let text = rsp.text
       let texts = text.split(/(?<!\?)[。？\n](?!\?)/)
       for (let t of texts) {
-        if (!t) {
+        if (!t || !t.trim()) {
           continue
         }
         t = t.trim()
@@ -329,11 +342,32 @@ export class bym extends plugin {
           t += '？'
         }
         const processed = await imageTool.processText(t, {
-          image: opt.image
+          images: opt.images // 传入图片数组而不是单个图片
         })
 
-        if (!processed) {
+        // 处理工具返回结果
+        if (processed && typeof processed === 'object') {
+          if (processed.switchRole) {
+            ALLRole = processed.switchRole
+          }
+          if (processed.continueProcess) {
+            // 根据是否是重新处理来设置不同的消息
+            if (processed.reprocess) {
+              e.msg = `[重新处理第${processed.currentIndex + 1}张图片的内容]`
+            } else {
+              e.msg = `[处理第${processed.currentIndex + 1}张图片（共${opt.images.length}张）]`
+            }
+            await bymGo(true)
+            return false
+          } else if (processed.needResponse) {
+            await bymGo(true)
+            return false
+          }
+        } else {
           let finalMsg = await convertFaces(t, true, e)
+          if (!finalMsg || (typeof finalMsg === 'string' && !finalMsg.trim())) {
+            continue
+          }
           logger.info(JSON.stringify(finalMsg))
           if (Math.floor(Math.random() * 100) < 10) {
             await e.reply(finalMsg, true, {

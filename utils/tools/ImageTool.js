@@ -5,6 +5,9 @@ export class ImageProcessTool extends AbstractTool {
     name = 'imageProcess'
     #availableImages = []
     #initialized = false
+    #currentImageIndex = 0
+    #totalImages = 0
+    #needReprocess = false
 
     parameters = {
         properties: {
@@ -63,7 +66,7 @@ export class ImageProcessTool extends AbstractTool {
 
 
 
-async initializeImageList() {
+    async initializeImageList() {
         try {
             this.#availableImages = await fileImgList()
             this.#initialized = true
@@ -88,6 +91,19 @@ async initializeImageList() {
     }
 
     async processText(text, options = {}) {
+        // 初始化或重置图片处理信息
+        if (options.images?.length > 0) {
+            this.#totalImages = options.images.length
+            // 只在新的处理周期时重置索引
+            if (!this.#needReprocess && this.#currentImageIndex >= this.#totalImages) {
+                this.#currentImageIndex = 0
+            }
+        } else if (options.image) {
+            this.#totalImages = 1
+            if (!this.#needReprocess) {
+                this.#currentImageIndex = 0
+            }
+        }
 
         const commands = {
             get: {
@@ -101,21 +117,54 @@ async initializeImageList() {
             notImage: {
                 regex: /NOTIMG(.*)/i,
                 handler: async (match) => {
-                    await this.handleNotImage(match[1]?.trim())
+                    const result = await this.handleNotImage()
+                    if (result.success) {
+                        // 标记需要重新处理当前图片
+                        this.#needReprocess = true
+                        return {
+                            success: true,
+                            continueProcess: true,
+                            currentIndex: this.#currentImageIndex,  // 保持当前索引不变
+                            switchRole: result.switchRole,
+                            needResponse: result.needResponse,
+                            reprocess: true  // 添加重新处理标记
+                        }
+                    }
                     return true
                 }
             },
             download: {
                 regex: /DOWNIMG:\s*(.+)/i,
                 handler: async (match) => {
-                    await this.handleDownloadImage(match[1].trim(), options.image)
+                    const baseName = match[1].trim()
+                    if (options.images) {
+                        const imageName = this.#totalImages === 1
+                            ? baseName
+                            : `${baseName}_${this.#currentImageIndex + 1}`
+                        await this.handleDownloadImage(imageName, options.images[this.#currentImageIndex])
+
+                        // 处理完当前图片后，重置重新处理标记
+                        this.#needReprocess = false
+
+                        // 只有在不是重新处理时才增加索引
+                        if (this.#currentImageIndex < this.#totalImages - 1) {
+                            this.#currentImageIndex++
+                            return {
+                                success: true,
+                                continueProcess: true,
+                                currentIndex: this.#currentImageIndex
+                            }
+                        }
+                    } else if (options.image) {
+                        await this.handleDownloadImage(baseName, options.image)
+                    }
                     return true
                 }
             },
             list: {
                 regex: /^(?:表情包列表|查看表情包|列出表情包)$/i,
                 handler: async () => {
-                    await this.e.reply(this.getImagesPrompt())
+                    await this.e.reply(await this.getImagesPrompt())
                     return true
                 }
             }
@@ -125,14 +174,14 @@ async initializeImageList() {
             const match = text.match(regex)
             if (match) {
                 try {
-                    return await handler(match)
+                    const result = await handler(match)
+                    return result
                 } catch (error) {
                     await this.e.reply(`处理失败: ${error.message}`)
                     return true
                 }
             }
         }
-
         return null
     }
     async handleGetImage(imageName) {
@@ -157,7 +206,6 @@ async initializeImageList() {
         if (!imageName || !imageData) {
             throw new Error('需要提供图片名称和数据')
         }
-
         try {
             const text = `DOWNIMG: ${imageName}`
             await downImg(this.e, imageData, text)
@@ -170,14 +218,22 @@ async initializeImageList() {
 
     async handleNotImage() {
         try {
-            this.ALLRole = this.previousRole
-            await this.bymGo(true)
-            return true
+            return {
+                success: true,
+                switchRole: this.previousRole,
+                needResponse: true
+            }
         } catch (error) {
             throw error
         }
     }
-
+    getCurrentProgress() {
+        return {
+            currentIndex: this.#currentImageIndex,
+            totalImages: this.#totalImages,
+            isProcessing: this.#currentImageIndex < this.#totalImages
+        }
+    }
 
 
     description = `图片处理工具：支持发送本地表情包、保存新表情包、切换处理模式。
@@ -185,20 +241,27 @@ async initializeImageList() {
 - GETIMG: <表情包名称> - 发送指定表情包
 - DOWNIMG: <名称> - 保存当前图片为表情包
 - NOTIMG - 切换到文本模式
-- 表情包列表 - 查看所有可用表情包`
+- 表情包列表 - 查看所有可用表情包
+\n\n多图片处理说明：
+- 当处理多张图片时，会自动为每张图片添加序号后缀
+- 例如：DOWNIMG: happy 命令处理多张图片时会保存为 happy_1, happy_2 等\n`
     // 添加 getSystemPrompt 方法
     async getSystemPrompt() {
         const images = await this.getAvailableImages()
+        const progress = this.getCurrentProgress()
         let prompt = `${this.description}\n`
-        
+
+        if (progress.isProcessing) {
+            prompt += `\n当前正在处理第 ${progress.currentIndex + 1}/${progress.totalImages} 张图片\n`
+        }
+
         if (images.length > 0) {
             prompt += `\n当前可用的表情包：\n${images.join('\n')}`
             prompt += `\n使用 GETIMG: <表情包名称> 来发送表情包`
         } else {
-            logger.warn('[ImageProcessTool] 没有可用的表情包')
             prompt += '\n当前没有可用的表情包'
         }
-        
+
         return prompt
     }
 }
