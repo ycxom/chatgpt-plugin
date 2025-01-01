@@ -137,32 +137,10 @@ export class bym extends plugin {
         replyPureTextCallback: e.reply,
         images: []
       }
-      let imgs = await getImg(e)
       // 处理图片
-      if (!e.msg) {
-        if (imgs?.length > 0) {
-          // 并行处理多张图片
-          opt.images = await Promise.all(imgs.map(async image => {
-            try {
-              const response = await fetch(image)
-              const base64Image = Buffer.from(await response.arrayBuffer())
-              return base64Image.toString('base64')
-            } catch (error) {
-              logger.error(`处理图片失败: ${error}`)
-              return null
-            }
-          })).then(results => results.filter(Boolean))
-
-          e.msg = `[${opt.images.length}张图片]`
-        } else {
-          return setTimeout(async () => {
-            e.msg = '我单纯只是at了你，根据群聊内容回应'
-            await bymGo()
-          }, 3000)
-        }
-      } else if (imgs?.length > 0 && !opt.images.length) {
-        // 处理有消息且有图片的情况
-        opt.images = await Promise.all(imgs.map(async image => {
+      let imgs = await getImg(e)
+      async function processImages(imgs) {
+        return Promise.all(imgs.map(async image => {
           try {
             const response = await fetch(image)
             const base64Image = Buffer.from(await response.arrayBuffer())
@@ -174,7 +152,24 @@ export class bym extends plugin {
         })).then(results => results.filter(Boolean))
       }
 
-      logger.info('[bymGo] 开始处理回复')
+      if (!e.msg) {
+        if (imgs?.length > 0) {
+          // 并行处理多张图片
+          opt.images = await processImages(imgs)
+
+          e.msg = `[${opt.images.length}张图片]`
+        } else {
+          return setTimeout(async () => {
+            e.msg = '我单纯只是at了你，根据群聊内容回应'
+            await bymGo()
+          }, 3000)
+        }
+      } else if (imgs?.length > 0 && !opt.images.length) {
+        // 处理有消息且有图片的情况
+        opt.images = await processImages(imgs)
+      }
+
+      logger.info('[ChatGPT-Plugin 伪人bym] 开始处理~')
 
       let previousRole = ALLRole
       if (opt.images?.length > 0 && !context.isAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
@@ -322,10 +317,10 @@ export class bym extends plugin {
         tools.push(new SetTitleTool())
       }
 
-      const imageTool = await initializeImageTool(e, previousRole, bymGo) // 注意这里需要 await
+      const imageTool = await initializeImageTool(e, previousRole, bymGo)
       if (Config.AutoToDownImg) {
         tools.push(imageTool)
-        const imagePrompt = await imageTool.getSystemPrompt() // 使用 await
+        const imagePrompt = await imageTool.getSystemPrompt()
         opt.system += '\n' + imagePrompt
       }
 
@@ -347,16 +342,11 @@ export class bym extends plugin {
 
         // 处理工具返回结果
         if (processed && typeof processed === 'object') {
-          if (processed.switchRole) {
-            ALLRole = processed.switchRole
-          }
+          if (processed.switchRole) ALLRole = processed.switchRole
           if (processed.continueProcess) {
-            // 根据是否是重新处理来设置不同的消息
-            if (processed.reprocess) {
-              e.msg = `[重新处理第${processed.currentIndex + 1}张图片的内容]`
-            } else {
-              e.msg = `[处理第${processed.currentIndex + 1}张图片（共${opt.images.length}张）]`
-            }
+            e.msg = processed.reprocess
+              ? `[重新处理第${processed.currentIndex + 1}张图片的内容]`
+              : `[处理第${processed.currentIndex + 1}张图片（共${opt.images.length}张）]`
             await bymGo(true)
             return false
           } else if (processed.needResponse) {

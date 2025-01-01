@@ -64,8 +64,6 @@ export class ImageProcessTool extends AbstractTool {
         }
     }
 
-
-
     async initializeImageList() {
         try {
             this.#availableImages = await fileImgList()
