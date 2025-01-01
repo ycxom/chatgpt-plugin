@@ -17,7 +17,7 @@ import { JinyanTool } from '../utils/tools/JinyanTool.js'
 import { KickOutTool } from '../utils/tools/KickOutTool.js'
 import { SetTitleTool } from '../utils/tools/SetTitleTool.js'
 import { SerpTool } from '../utils/tools/SerpTool.js'
-import { getToimg, downImg, fileImgList } from '../utils/ToDoimg.js'
+import { initializeImageTool } from '../utils/tools/ImageTool.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -52,75 +52,85 @@ export class bym extends plugin {
         }
       ]
     })
+    this.initializeConfig()
+  }
+  initializeConfig() {
     if (typeof Config.assistantLabel === 'string') {
       Config.assistantLabel = [Config.assistantLabel]
     }
-    Config.assistantLabel = Config.assistantLabel || DefaultConfig.assistantLabel
-    Config.returnQQ = Config.returnQQ || DefaultConfig.returnQQ
-    Config.GroupList = Config.GroupList || DefaultConfig.GroupList
-    Config.UserList = Config.UserList || DefaultConfig.UserList
-    Config.enableBYM = Config.enableBYM ?? DefaultConfig.enableBYM
-    Config.bymPreset = Config.bymPreset || DefaultConfig.bymPreset
-    Config.bymFuckPrompt = Config.bymFuckPrompt || DefaultConfig.bymFuckPrompt
-    Config.blockWords = Config.blockWords || DefaultConfig.blockWords
-    Config.AutoToDownImg = Config.AutoToDownImg ?? DefaultConfig.AutoToDownImg
-    Config.debug = Config.debug ?? DefaultConfig.debug
+    Object.entries(DefaultConfig).forEach(([key, value]) => {
+      Config[key] = Config[key] ?? value
+    })
   }
 
+  async readConfigData(id, configList) {
+    let data = {
+      chatsList: 20,
+      propNum: 0,
+      notOfGroup: false,
+      maxText: 50
+    }
+
+    const matchedConfig = configList.find(item => String(item.id) === String(id))
+    if (matchedConfig) {
+      data.chatsList = parseInt(matchedConfig.chatslist) || data.chatsList
+      data.propNum = parseInt(matchedConfig.propNum) || data.propNum
+      data.notOfGroup = matchedConfig.notofgroup || data.notOfGroup
+      data.maxText = parseInt(matchedConfig.maxtext) || data.maxText
+    }
+    return data
+  }
   /** 复读 */
   async bym(e) {
-    if (!Config.enableBYM) {
-      return false
-    }
-    const sender = e.sender.user_id
-    const atbot = e.atme
-    const group = e.group_id
-    let IsAtBot = false
-    let ALLRole = "default"
-    let ChatsList = 20
-    let MaxText = 50
-    let prop = Math.floor(Math.random() * 100)
+    if (!Config.enableBYM) return false
 
-    if (!Config.returnQQ.includes(sender)) {
-      const group_data = await ReadArr(group, Config.GroupList)
-      const user_data = await ReadArr(sender, Config.UserList)
-      MaxText = user_data[3] !== group_data[3] ? user_data[3] : group_data[3]
-      prop = user_data[2] ? user_data[1] : group_data[1]
-      ChatsList = group_data[0]
-      if (Config.assistantLabel.some(UserMsg => e.msg?.toLowerCase().includes(UserMsg.toLowerCase())) || atbot) {
-        prop = -1
-        IsAtBot = true
-      } else {
-        if (Config.UserList.some(index => index.id === sender)) {
-          if (user_data[2]) logger.info(`单独概率用户`)
-        }
-        if (user_data[2] && !Config.UserList.some(Id => group.includes(Id)) && !Config.GroupList.length) return false
-      }
-      async function ReadArr(i, arrlist) {
-        let NotfoGroup
-        if (arrlist.some(index => String(index.id) === String(i))) {
-          let ServerProp = prop
-          for (let user of arrlist) {
-            if (String(user.id) === String(i)) {
-              ChatsList = parseInt(user?.chatslist) || ChatsList
-              prop = parseInt(user?.propNum) || prop
-              NotfoGroup = user?.notofgroup || false
-              MaxText = parseInt(user?.maxtext) || MaxText
-            }
-          }
-          ServerProp -= prop
-          prop = Math.max(-1, ServerProp)
-        }
-        return [ChatsList, prop, NotfoGroup, MaxText]
-      }
+    const sender = e.sender.user_id
+    const atBot = e.atme
+    const group = e.group_id
+    let ALLRole = 'default'
+
+
+    if (Config.returnQQ.includes(sender)) return false
+
+    const context = {
+      isAtBot: false,
+      shouldRespond: false,
+      maxText: 50,
+      probability: 0,
+      chatsList: 20
+    }
+
+    const groupData = await this.readConfigData(group, Config.GroupList)
+    const userData = await this.readConfigData(sender, Config.UserList)
+
+    context.maxText = userData.maxText !== groupData.maxText ? userData.maxText : groupData.maxText
+    context.probability = userData.notOfGroup ? userData.propNum : groupData.propNum
+    context.chatsList = groupData.chatsList
+
+    if (Config.assistantLabel.some(label => e.msg?.toLowerCase().includes(label.toLowerCase())) || atBot) {
+      context.probability = 100
+      context.isAtBot = true
     } else {
-      return false
+      if (Config.UserList.some(user => user.id === sender)) {
+        if (userData.notOfGroup) {
+          logger.info('单独概率用户')
+        }
+      }
+      if (userData.notOfGroup &&
+        !Config.UserList.some(user => group.includes(user.id)) &&
+        !Config.GroupList.length) {
+        return null
+      }
     }
-    if (prop < 0) {
+
+    context.shouldRespond = Math.floor(Math.random() * 100) - context.probability < 0
+
+    if (context.shouldRespond) {
       await bymGo()
-    }
+    } else return false
 
     async function bymGo(NotToImg) {
+
       let opt = {
         maxOutputTokens: 500,
         temperature: 1,
@@ -128,7 +138,7 @@ export class bym extends plugin {
       }
       let imgs = await getImg(e)
       if (!e.msg) {
-        if (imgs && imgs.length > 0) {
+        if (imgs?.length > 0) {
           let image = imgs[0]
           const response = await fetch(image)
           const base64Image = Buffer.from(await response.arrayBuffer())
@@ -142,20 +152,19 @@ export class bym extends plugin {
 
         }
       }
-      if (!opt.image && imgs && imgs.length > 0) {
+      if (!opt.image && imgs?.length > 0) {
         let image = imgs[0]
         const response = await fetch(image)
         const base64Image = Buffer.from(await response.arrayBuffer())
         opt.image = base64Image.toString('base64')
       }
+      logger.info('[bymGo] 开始处理回复')
 
-      let ForRole = ALLRole
-      if (opt.image && !IsAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
+      let previousRole = ALLRole
+      if (opt.image && !context.isAtBot && !NotToImg && !e.at && Config.AutoToDownImg) {
         ALLRole = 'downimg'
       }
-      
-      const ImgList = await fileImgList()
-      
+
       const now = new Date();
       const DateTime = now.toLocaleString()
       let Dateday = now.getDay() === 0 ? '日' : now.getDay()
@@ -169,7 +178,7 @@ export class bym extends plugin {
       const txmod = [
         '"app":"com.tencent.multimsg","config"',
         '"app":"com.tencent.structmsg","config"'
-        
+
       ]
       let candidate = Config.bymPreset
       function replaceUserInput(input) {
@@ -179,11 +188,11 @@ export class bym extends plugin {
         }
         return result;
       }
-      if (IsAtBot) {
+      if (context.isAtBot) {
         if (e.msg) {
           const originalMsg = e.msg;
           const replacedMsg = replaceUserInput(e.msg);
-          
+
           if (originalMsg !== replacedMsg) {
             e.msg = replacedMsg;
           }
@@ -194,7 +203,7 @@ export class bym extends plugin {
           RecallMsg = true
           candidate += Config.bymFuckPrompt
         }
-        if (e.msg.length >= MaxText && !txmod.some(UserMsg => e.msg?.includes(UserMsg))) {
+        if (e.msg.length >= context.maxText && !txmod.some(UserMsg => e.msg?.includes(UserMsg))) {
           const userIndex = RoleFalseUser.findIndex(user => user.UserQQ === e.user_id);
 
           if (userIndex === -1) {
@@ -225,7 +234,7 @@ export class bym extends plugin {
         logger.info(log)
       }
 
-      let chats = await getChatHistoryGroup(e, ChatsList)
+      let chats = await getChatHistoryGroup(e, context.chatsList)
 
       chats = chats
         .filter(chat => !Config.returnQQ.includes(chat.user_id))
@@ -240,8 +249,8 @@ export class bym extends plugin {
 
       async function SearchRole(user_role) {
         let Role;
-        
-        switch(user_role) {
+
+        switch (user_role) {
           case "downimg":
             Role = '现在看到的是一张图片，若你觉得是一张表情包，并不是通知，或其他的图片，注意辨别图片文字是否为通知；单纯是表情包，请发送 DOWNIMG: 命名该表情。 不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀，请以你的角度觉得如果要发这个表情包要用什么名字来命名； 若不是表情包等，及发送NOTIMG';
             break;
@@ -251,20 +260,13 @@ export class bym extends plugin {
               `以下是聊天记录:
               ${Group_Chat}
               \n你的回复应该尽可能简练，像人类一样随意，不要附加任何奇怪的东西，如聊天记录的格式（比如${Config.assistantLabel}：），禁止重复聊天记录。
-              注意当前时间与日期为${DateTime}，星期${Dateday},24小时制，时区已正确，不要被日志的时间与其他时间搞混了，如果有人咨询时间就使用${DateTime}，星期${Dateday}这个时间，群友与你几乎在一个时区，若有人说或做的事情与时间段不合理，反驳他，注意除了他声明了自己的时区
-              以下是可用的表情包列表
-              ${ImgList}` +
-              (ImgList.length > 0 && Config.AutoToDownImg ? `
-              如果要发送表情包，请根据该格式 GETIMG: 完整表情包名称，实例 GETIMG: 挠头.gif 即可发送，注意发送完整名称
-              可根据聊天，选择表情包发送。禁止发送多余的格式与说明。发送格式为 注意前面不需要换行 GETIMG: 挠头.gif 不需要换行
-              不要被日志和其他聊天消息的格式迷惑，请保持标准格式，禁止发送[表情包：xxx]、[图片]!!!，禁止发送[表情包：xxx]、[图片]!!!
-              ` : '');
+              注意当前时间与日期为${DateTime}，星期${Dateday},24小时制，时区已正确，不要被日志的时间与其他时间搞混了，如果有人咨询时间就使用${DateTime}，星期${Dateday}这个时间，群友与你几乎在一个时区，若有人说或做的事情与时间段不合理，反驳他，注意除了他声明了自己的时区`
             break;
           default:
             logger.error(`未知的 Role 类型：${user_role}，使用默认 Role`);
             Role = `你的名字是"${Config.assistantLabel}"，你在一个qq群里。请简短回复。`;
         }
-      
+
         return Role;
       }
       opt.system = Role
@@ -306,6 +308,14 @@ export class bym extends plugin {
       if (e.group.is_owner) {
         tools.push(new SetTitleTool())
       }
+
+      const imageTool = await initializeImageTool(e, previousRole, bymGo) // 注意这里需要 await
+      if (Config.AutoToDownImg) {
+        tools.push(imageTool)
+        const imagePrompt = await imageTool.getSystemPrompt() // 使用 await
+        opt.system += '\n' + imagePrompt
+      }
+
       client.addTools(tools)
       let rsp = await client.sendMessage(e.msg, opt)
       let text = rsp.text
@@ -318,32 +328,11 @@ export class bym extends plugin {
         if (text[text.indexOf(t) + t.length] === '？') {
           t += '？'
         }
-        const getImgRegex = /GETIMG:\s*([\s\S]+?)\s*$/i;
-        const match1 = t.match(getImgRegex);
-        if (match1) {
-          const tag = match1[1].trim();
-          if (tag === "") {
-            t = t.replace(getImgRegex, ' ').trim();
-          } else {
-            await getToimg(e, tag);
-            t = t.replace(getImgRegex, ' ').trim();
-          }
-        }
-        const notImgRegex = /NOTIMG(.*)/i;
-        const notmatch = t.match(notImgRegex);
-        if (notmatch) {
-          t = null
-          ALLRole = ForRole
-          await bymGo(true)
-        }
-        const downImgRegex = /DOWNIMG:\s*(.+)/i;
-        const match = t?.match(downImgRegex);
-        if (match) {
-          await downImg(e, opt.image, t);
-          continue;
-        }
+        const processed = await imageTool.processText(t, {
+          image: opt.image
+        })
 
-        if (t) {
+        if (!processed) {
           let finalMsg = await convertFaces(t, true, e)
           logger.info(JSON.stringify(finalMsg))
           if (Math.floor(Math.random() * 100) < 10) {

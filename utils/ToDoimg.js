@@ -2,127 +2,143 @@ import fs from "fs";
 import pathModule from 'path';
 import { fileTypeFromBuffer } from 'file-type';
 import moment from 'moment';
-const _path = process.cwd();
-const path = _path + "/temp/tp-bq";
 
-// 没文件夹就创建一个
-if (!fs.existsSync(path)) {
-  fs.mkdirSync(path, { recursive: true })
-}
-if (!fs.existsSync(pathModule.join(path, 'pictures'))) {
-  fs.mkdirSync(pathModule.join(path, 'pictures'), { recursive: true })
-}
+// 配置
+const ROOT_PATH = process.cwd();
+const PICTURES_DIR = pathModule.join(ROOT_PATH, "temp/tp-bq", "pictures");
+
+// 工具函数
+const createDirIfNotExists = (dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+};
+
+const sanitizeFilename = (name) => {
+  return name
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[\[\]]/g, '')
+    .trim()
+    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_.]/g, '-');
+};
+
+const findMatchingFiles = (fileList, tag) => {
+  const sanitizedTag = sanitizeFilename(tag);
+  let matches = fileList.filter(file => file === sanitizedTag);
+  if (matches.length === 0) {
+    matches = fileList.filter(file => file.startsWith(sanitizedTag));
+  }
+  if (matches.length === 0) {
+    matches = fileList.filter(file => file.includes(sanitizedTag));
+  }
+  return matches;
+};
+
+// 初始化目录
+createDirIfNotExists(PICTURES_DIR);
 
 /**
- * 
- * @param {*} e - 输入的消息
- * @param {*} tag - 表情包标签
- * @returns 
+ * 获取并发送表情包
+ * @param {Object} e - 消息对象
+ * @param {string} tag - 表情包标签
+ * @returns {Promise<boolean|undefined>}
  */
 export async function getToimg(e, tag) {
-  const picturesPath = pathModule.join(path, 'pictures');
-  const fileImgList = await fs.promises.readdir(picturesPath);
-
   try {
-    const sanitizedTag = tag
-      .replace(/[\u200B-\u200D\uFEFF]/g, '')
-      .replace(/[\[\]]/g, '')
-      .trim()
-      .replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_.]/g, '-');
-    let matchedFiles = fileImgList.filter(file => file === sanitizedTag);
+    // 读取文件列表
+    const fileList = await fs.promises.readdir(PICTURES_DIR);
+    const matchedFiles = findMatchingFiles(fileList, tag);
+
     if (matchedFiles.length === 0) {
-      matchedFiles = fileImgList.filter(file => file.startsWith(sanitizedTag));
-    }
-    if (matchedFiles.length === 0) {
-      matchedFiles = fileImgList.filter(file => file.includes(sanitizedTag));
-    }
-    if (matchedFiles.length === 0) {
-      logger.warn(`未找到匹配的表情包: ${sanitizedTag}`);
+      logger.warn(`未找到匹配的表情包: ${tag}`);
       return;
     }
-    // 随机选择一个文件
+
+    // 随机选择文件
     const selectedFile = matchedFiles[Math.floor(Math.random() * matchedFiles.length)];
-    const picPath = pathModule.join(picturesPath, selectedFile);
+    const picPath = pathModule.join(PICTURES_DIR, selectedFile);
+
     try {
       await fs.promises.access(picPath);
+      await e.reply(segment.image('file:///' + picPath));
+      logger.info(`发送表情包: ${picPath}`);
+      return false;
     } catch {
       logger.warn(`找不到指定的表情包文件: ${picPath}`);
       return;
     }
-    e.reply(segment.image('file:///' + picPath));
-
-    logger.info(`发送表情包: ${picPath}`);
-    return false;
   } catch (error) {
-    logger.error('Error in getToimg:', error);
+    logger.error('获取表情包失败:', error);
+    return;
   }
 }
 
 /**
- * 
- * @param {*} e - 输入的消息
- * @param {*} image - 图片Base64
- * @returns 
+ * 保存表情包
+ * @param {Object} e - 消息对象
+ * @param {string} image - Base64图片数据
+ * @param {string} text - 命令文本
+ * @returns {Promise<boolean|undefined>}
  */
 export async function downImg(e, image, t) {
   try {
-    let reply;
-    if (e.source) {
-      if (e.isGroup) {
-        reply = (await e.group.getChatHistory(e.source.seq, 1)).pop()?.message;
-      } else {
-        reply = (await e.friend.getChatHistory(e.source.time, 1)).pop()?.message;
+      if (!e.img && !image) {
+          return false;
       }
-      if (reply) {
-        for (let val of reply) {
-          if (val.type === "image") {
-            e.img = [val.url];
-            break;
+      let kWordReg = /^#?(DOWNIMG:)\s*(.*)/i;
+      t = t.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      const match = kWordReg.exec(t);
+      if (!match) {
+          logger.error('DOWNIMG command format invalid:', t);
+          return;
+      }
+      let rawmsg = match[2] || "defaultTag";
+      let kWord = rawmsg.replace(/，|,|、| |。/g, "-")
+          .replace(/--+/g, "-")
+          .replace(/^-|-$|--/g, "")
+          .trim() || "defaultTag";
+          
+      if (image) {
+          const imageBuffer = Buffer.from(image, 'base64');
+          const type = await fileTypeFromBuffer(imageBuffer);
+          let picType = 'png';
+          if (type && type.ext) {
+              picType = type.ext;
           }
-        }
+          const currentTime = moment().format("YYMMDDHHmmss");
+          const safeTag = kWord.replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '-');
+          const picPath = pathModule.join(PICTURES_DIR, 'pictures', `${currentTime}-${safeTag.substring(0, 200)}.${picType}`);
+          logger.mark("DOWNIMG：", picPath);
+          
+          if (!fs.existsSync(pathModule.join(PICTURES_DIR, 'pictures'))) {
+              fs.mkdirSync(pathModule.join(PICTURES_DIR, 'pictures'), { recursive: true });
+          }
+          fs.writeFileSync(picPath, imageBuffer);
+          logger.info(`图片已保存，标签为：${kWord}`);
+          return true; // 返回成功标志
       }
-    }
-    if (!e.img && !image) {
-      return false;
-    }
-    let kWordReg = /^#?(DOWNIMG:)\s*(.*)/i;
-    t = t.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-    const match = kWordReg.exec(t);
-    if (!match) {
-      logger.error('DOWNIMG command format invalid:', t);
-      return;
-    }
-    let rawmsg = match[2] || "defaultTag";
-    let kWord = rawmsg.replace(/，|,|、| |。/g, "-").replace(/--+/g, "-").replace(/^-|-$|--/g, "").trim() || "defaultTag";
-    if (image) {
-      const imageBuffer = Buffer.from(image, 'base64');
-      const type = await fileTypeFromBuffer(imageBuffer);
-      let picType = 'png';
-      if (type && type.ext) {
-        picType = type.ext;
-      }
-      const currentTime = moment().format("YYMMDDHHmmss");
-      const safeTag = kWord.replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '-');
-      const picPath = pathModule.join(path, 'pictures', `${currentTime}-${safeTag.substring(0, 200)}.${picType}`);
-      logger.mark("DOWNIMG：", picPath);
-      if (!fs.existsSync(pathModule.join(path, 'pictures'))) {
-        fs.mkdirSync(pathModule.join(path, 'pictures'), { recursive: true });
-      }
-      fs.writeFileSync(picPath, imageBuffer);
-      logger.info(`图片已保存，标签为：${kWord}`);
-    }
   } catch (error) {
-    logger.error('Error in downImg:', error);
-    logger.error("保存图片时发生错误");
+      logger.error('Error in downImg:', error);
+      logger.error("保存图片时发生错误");
+      return false; // 返回失败标志
   }
 }
 
+/**
+ * 获取表情包列表
+ * @returns {Promise<string[]>}
+ */
 export async function fileImgList() {
-  const picturesPath = pathModule.join(path, 'pictures');
-  const ImgList = await fs.promises.readdir(picturesPath);
-  const fileImgList = ImgList.map(filename => {
-    const match = filename.match(/\d{12}-(.+)$/);
-    return match ? match[1] : filename;
-  });
-  return fileImgList;
-} 
+  try {
+    const files = await fs.promises.readdir(PICTURES_DIR);
+    return files
+      .map(filename => {
+        const match = filename.match(/\d{12}-(.+)$/);
+        return match ? match[1] : filename;
+      })
+      .filter(Boolean);
+  } catch (error) {
+    logger.error('读取表情包列表失败:', error);
+    return [];
+  }
+}
