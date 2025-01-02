@@ -362,9 +362,9 @@ export class bym extends plugin {
         } else {
           let finalMsg = await convertFaces(t, true, e)
           finalMsg = finalMsg.map(filterResponseChunk).filter(i => !!i)
-          if (!finalMsg || (typeof finalMsg === 'string' && !finalMsg.trim())) {
-            continue
-          }
+          // if (!finalMsg || (typeof finalMsg === 'string' && !finalMsg.trim())) {
+          //   continue
+          // }
           logger.info(JSON.stringify(finalMsg))
           if (Math.floor(Math.random() * 100) < 10) {
             await e.reply(finalMsg, true, {
