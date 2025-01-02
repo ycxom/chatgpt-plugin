@@ -175,7 +175,7 @@ export class bym extends plugin {
  * @param msg
  */
 function filterResponseChunk (msg) {
-  if (!msg) {
+  if (!msg || typeof msg !== 'string') {
     return false
   }
   if (msg.trim() === '```') {
