@@ -19,6 +19,7 @@ import { SetTitleTool } from '../utils/tools/SetTitleTool.js'
 import { SerpTool } from '../utils/tools/SerpTool.js'
 import { initializeImageTool } from '../utils/tools/ImageTool.js'
 import { DailyNewsTool } from '../utils/tools/DailyNewsTool.js'
+import { SendMessageToSpecificGroupOrUserTool } from '../utils/tools/SendMessageToSpecificGroupOrUserTool.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -35,6 +36,7 @@ const DefaultConfig = {
 
 // 轻微黑名单用户
 let RoleFalseUser = []
+
 
 export class bym extends plugin {
   constructor() {
@@ -267,7 +269,7 @@ export class bym extends plugin {
             Role = `现在看到的是${opt.images.length}张图片（从第1张到第${opt.images.length}张），请依次查看各张图片。若觉得是表情包，并不是通知或其他类型的图片，请发送 DOWNIMG: 命名该表情。不需要发送过多的参数，只需要发送格式DOWNIMG: 命名该表情，注意不需要携带后缀；若不是表情包等，请发送NOTIMG并对图片内容进行分析描述。注意：请从第1张图片开始依次描述。`;
             break;
           case "default":
-            Role = `你的名字是"${Config.assistantLabel}"，你在一个qq群里，群号是${group},当前和你说话的人群名片是${card}, qq号是${sender}, 请你结合用户的发言和聊天记录作出回应，要求表现得随性一点，最好参与讨论，混入其中。不要过分插科打诨，不知道说什么可以复读群友的话。要求你做搜索、发图、发视频和音乐等操作时要使用工具。不可以直接发[图片]这样蒙混过关。要求优先使用中文进行对话。` +
+            Role = `你的名字是“${Config.assistantLabel}”，你在一个qq群里，群号是${group},当前和你说话的人群名片是${card}, qq号是${sender}, 请你结合用户的发言和聊天记录作出回应，要求表现得随性一点，最好参与讨论，混入其中。不要过分插科打诨，不知道说什么可以复读群友的话。要求你做搜索、发图、发视频和音乐等操作时要使用工具。不可以直接发[图片]这样蒙混过关。要求优先使用中文进行对话。如果此时不需要自己说话，可以只回复<EMPTY>` +
               candidate +
               `以下是聊天记录:
               ${Group_Chat}
@@ -306,6 +308,7 @@ export class bym extends plugin {
         new WebsiteTool(),
         new WeatherTool(),
         new DailyNewsTool()
+        new SendMessageToSpecificGroupOrUserTool()
       ]
       if (Config.azSerpKey) {
         tools.push(new SerpTool())
@@ -329,7 +332,7 @@ export class bym extends plugin {
       client.addTools(tools)
       let rsp = await client.sendMessage(e.msg, opt)
       let text = rsp.text
-      let texts = text.split(/(?<!\?)[。？\n](?!\?)/)
+      let texts = text.split(/(?<!\?)[。？\n](?!\?)/, 3)
       for (let t of texts) {
         if (!t || !t.trim()) {
           continue
@@ -358,6 +361,7 @@ export class bym extends plugin {
           }
         } else {
           let finalMsg = await convertFaces(t, true, e)
+          finalMsg = finalMsg.map(filterResponseChunk).filter(i => !!i)
           if (!finalMsg || (typeof finalMsg === 'string' && !finalMsg.trim())) {
             continue
           }
@@ -382,4 +386,21 @@ export class bym extends plugin {
     }
     return false
   }
+}
+
+/**
+ * 过滤
+ * @param msg
+ */
+function filterResponseChunk (msg) {
+  if (!msg || typeof msg !== 'string') {
+    return false
+  }
+  if (msg.trim() === '```') {
+    return false
+  }
+  if (msg.trim() === '<EMPTY>') {
+    return false
+  }
+  return msg
 }
