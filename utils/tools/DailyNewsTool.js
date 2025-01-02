@@ -3,6 +3,7 @@ import fetch from 'node-fetch'
 
 export class DailyNewsTool extends AbstractTool {
   name = 'dailyNews'
+  
   parameters = {
     properties: {
       action: {
@@ -14,14 +15,12 @@ export class DailyNewsTool extends AbstractTool {
     required: ['action']
   }
 
-  description = 'Useful when you want to know today\'s news headlines and hot topics. Use keywords like "今日新闻", "每日新闻", "60秒新闻" to get news.'
-
-  func = async function(opts) {
+  func = async function (opts) {
     try {
       // 添加请求头和超时设置
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 10000) // 10秒超时
-      
+
       const response = await fetch('https://60s.viki.moe/?v2=1', {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -35,16 +34,16 @@ export class DailyNewsTool extends AbstractTool {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const jsonData = await response.json()
-      
+
       // 检查数据格式
       if (!jsonData?.data?.news || !Array.isArray(jsonData.data.news)) {
         throw new Error('新闻数据格式无效')
       }
 
       const { news, tip, updated } = jsonData.data
-      
+
       // 格式化时间
       const updateTime = new Date(updated).toLocaleString('zh-CN', {
         hour12: false,
@@ -59,7 +58,7 @@ export class DailyNewsTool extends AbstractTool {
       return message
     } catch (error) {
       logger.error(`[DailyNewsTool] 获取新闻失败: ${error.message}`, error)
-      
+
       // 更友好的错误提示
       if (error.name === 'AbortError') {
         return '获取新闻超时，请稍后再试'
@@ -91,4 +90,5 @@ export class DailyNewsTool extends AbstractTool {
     }
     return result
   }
+  description = 'Useful when you want to know today\'s news headlines and hot topics. Use keywords like "今日新闻", "每日新闻", "60秒新闻" to get news.'
 }
