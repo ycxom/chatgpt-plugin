@@ -18,6 +18,7 @@ import { KickOutTool } from '../utils/tools/KickOutTool.js'
 import { SetTitleTool } from '../utils/tools/SetTitleTool.js'
 import { SerpTool } from '../utils/tools/SerpTool.js'
 import { initializeImageTool } from '../utils/tools/ImageTool.js'
+import { DailyNewsTool } from '../utils/tools/DailyNewsTool.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -303,7 +304,8 @@ export class bym extends plugin {
         new SendMusicTool(),
         new SendPictureTool(),
         new WebsiteTool(),
-        new WeatherTool()
+        new WeatherTool(),
+        new DailyNewsTool()
       ]
       if (Config.azSerpKey) {
         tools.push(new SerpTool())

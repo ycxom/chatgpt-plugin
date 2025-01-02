@@ -1078,6 +1078,7 @@ export function supportGuoba () {
                 required: true,
               }
             ],
+          },
           field: 'bymFuckList',
           label: '伪人模式反击的触发词',
           bottomHelpMessage: '请输入用于伪人模式下骂人反击的触发词，每个词组将被单独处理',
