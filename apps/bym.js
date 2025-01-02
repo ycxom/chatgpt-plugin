@@ -396,6 +396,9 @@ function filterResponseChunk (msg) {
   if (!msg || typeof msg !== 'string') {
     return false
   }
+  if (!msg.trim()) {
+    return false
+  }
   if (msg.trim() === '```') {
     return false
   }
