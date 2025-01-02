@@ -107,11 +107,11 @@ export async function downImg(e, image, t) {
           }
           const currentTime = moment().format("YYMMDDHHmmss");
           const safeTag = kWord.replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '-');
-          const picPath = pathModule.join(PICTURES_DIR, 'pictures', `${currentTime}-${safeTag.substring(0, 200)}.${picType}`);
+          const picPath = pathModule.join(PICTURES_DIR, `${currentTime}-${safeTag.substring(0, 200)}.${picType}`);
           logger.mark("DOWNIMG：", picPath);
           
-          if (!fs.existsSync(pathModule.join(PICTURES_DIR, 'pictures'))) {
-              fs.mkdirSync(pathModule.join(PICTURES_DIR, 'pictures'), { recursive: true });
+          if (!fs.existsSync(pathModule.join(PICTURES_DIR))) {
+              fs.mkdirSync(pathModule.join(PICTURES_DIR), { recursive: true });
           }
           fs.writeFileSync(picPath, imageBuffer);
           logger.info(`图片已保存，标签为：${kWord}`);

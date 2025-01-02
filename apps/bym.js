@@ -339,6 +339,7 @@ export class bym extends plugin {
         const processed = await imageTool.processText(t, {
           images: opt.images // 传入图片数组而不是单个图片
         })
+        if (t.match(/^(GETIMG|DOWNIMG):/i)) continue
 
         // 处理工具返回结果
         if (processed && typeof processed === 'object') {

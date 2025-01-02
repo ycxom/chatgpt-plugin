@@ -36,7 +36,7 @@ export class ImageProcessTool extends AbstractTool {
         this.initializeImageList()
     }
 
-    async func(opts) {
+    func = async function (opts) {
         const { action, imageName, imageData } = opts
 
         try {
@@ -109,7 +109,7 @@ export class ImageProcessTool extends AbstractTool {
                 handler: async (match) => {
                     const imageName = match[1].trim()
                     await this.handleGetImage(imageName)
-                    return true
+                    return null
                 }
             },
             notImage: {
@@ -156,7 +156,7 @@ export class ImageProcessTool extends AbstractTool {
                     } else if (options.image) {
                         await this.handleDownloadImage(baseName, options.image)
                     }
-                    return true
+                    return null
                 }
             },
             list: {
@@ -194,7 +194,7 @@ export class ImageProcessTool extends AbstractTool {
                 await this.e.reply(`未找到匹配的表情包: ${imageName}`)
             }
 
-            return true // 表示已处理
+            return null
         } catch (error) {
             throw error
         }
@@ -208,7 +208,7 @@ export class ImageProcessTool extends AbstractTool {
             const text = `DOWNIMG: ${imageName}`
             await downImg(this.e, imageData, text)
             await this.initializeImageList()
-            return true
+            return null
         } catch (error) {
             throw error
         }
