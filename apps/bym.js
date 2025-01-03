@@ -363,9 +363,9 @@ export class bym extends plugin {
         } else {
           let finalMsg = await convertFaces(t, true, e)
           finalMsg = finalMsg.map(filterResponseChunk).filter(i => !!i)
-          // if (!finalMsg || (typeof finalMsg === 'string' && !finalMsg.trim())) {
-          //   continue
-          // }
+          if (!finalMsg.length || (JSON.stringify(finalMsg).trim() === '')) {
+            continue
+          }
           logger.info(JSON.stringify(finalMsg))
           if (Math.floor(Math.random() * 100) < 10) {
             await e.reply(finalMsg, true, {
@@ -393,7 +393,10 @@ export class bym extends plugin {
  * 过滤
  * @param msg
  */
-function filterResponseChunk (msg) {
+function filterResponseChunk(msg) {
+  if (typeof msg === 'object') {
+    return msg || false
+  }
   if (!msg || typeof msg !== 'string') {
     return false
   }
@@ -409,7 +412,7 @@ function filterResponseChunk (msg) {
   return msg
 }
 
-function customSplitRegex (text, regex, limit) {
+function customSplitRegex(text, regex, limit) {
   const result = []
   let match
   let lastIndex = 0
