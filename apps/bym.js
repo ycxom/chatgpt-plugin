@@ -332,7 +332,8 @@ export class bym extends plugin {
       client.addTools(tools)
       let rsp = await client.sendMessage(e.msg, opt)
       let text = rsp.text
-      let texts = text.split(/(?<!\?)[。？\n](?!\?)/, 3)
+      let texts = customSplitRegex(text, /(?<!\?)[。？\n](?!\?)/, 3)
+      // let texts = text.split(/(?<!\?)[。？\n](?!\?)/, 3)
       for (let t of texts) {
         if (!t || !t.trim()) {
           continue
@@ -406,4 +407,24 @@ function filterResponseChunk (msg) {
     return false
   }
   return msg
+}
+
+function customSplitRegex (text, regex, limit) {
+  const result = []
+  let match
+  let lastIndex = 0
+  const globalRegex = new RegExp(regex, 'g')
+
+  while ((match = globalRegex.exec(text)) !== null) {
+    if (result.length < limit - 1) {
+      result.push(text.slice(lastIndex, match.index))
+      lastIndex = match.index + match[0].length
+    } else {
+      break
+    }
+  }
+
+  // 添加剩余部分
+  result.push(text.slice(lastIndex))
+  return result
 }
