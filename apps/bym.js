@@ -20,7 +20,6 @@ import { SerpTool } from '../utils/tools/SerpTool.js'
 import { initializeImageTool } from '../utils/tools/ImageTool.js'
 import { DailyNewsTool } from '../utils/tools/DailyNewsTool.js'
 import { SendMessageToSpecificGroupOrUserTool } from '../utils/tools/SendMessageToSpecificGroupOrUserTool.js'
-import { SystemCommandTool } from '../utils/tools/SystemCommandTool.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -323,8 +322,6 @@ export class bym extends plugin {
         tools.push(new SetTitleTool())
       }
 
-      // 你没见过bot能控制系统吗（
-      tools.push(new SystemCommandTool())
       const imageTool = await initializeImageTool(e, previousRole, bymGo)
       if (Config.AutoToDownImg) {
         tools.push(imageTool)
