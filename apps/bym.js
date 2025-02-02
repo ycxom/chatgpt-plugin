@@ -84,7 +84,8 @@ export class bym extends plugin {
           bing: system,
           claude: system,
           claude2: system,
-          gemini: system
+          gemini: system,
+          xh: system
         },
         settings: {
           replyPureTextCallback: msg => {

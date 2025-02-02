@@ -127,7 +127,8 @@ class Core {
       bing: Config.sydney,
       claude: Config.claudeSystemPrompt,
       claude2: Config.claudeSystemPrompt,
-      gemini: Config.geminiPrompt
+      gemini: Config.geminiPrompt,
+      xh: Config.xhPrompt
     },
     settings: {
       replyPureTextCallback: undefined
@@ -570,7 +571,7 @@ class Core {
         e,
         chatId: conversation?.conversationId,
         image: image ? image[0] : undefined,
-        system: Config.xhPrompt
+        system: opt.system.xh
       })
       return response
     } else if (use === 'azure') {
