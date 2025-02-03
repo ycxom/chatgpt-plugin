@@ -152,6 +152,12 @@ export function supportGuoba () {
           component: 'Switch'
         },
         {
+          field: 'forwardReasoning',
+          label: '是否转发思考过程',
+          bottomHelpMessage: 'OpenAI的o系列、deepseek的r系列等思考模型的思考过程是否以转发形式发出。默认开启',
+          component: 'Switch'
+        },
+        {
           field: 'openAiBaseUrl',
           label: 'OpenAI API服务器地址',
           bottomHelpMessage: 'OpenAI的API服务器地址。注意要带上/v1。默认为https://api.openai.com/v1',
@@ -979,6 +985,7 @@ export function supportGuoba () {
           label: '合成emoji的API地址，默认谷歌厨房',
           component: 'Input'
         },
+
         {
           field: 'bymRate',
           label: '伪人模式触发默认概率，单位为%',
@@ -986,6 +993,20 @@ export function supportGuoba () {
           componentProps: {
             min: 0,
             max: 100
+          }
+        },
+        {
+          field: 'bymMode',
+          label: '伪人模型',
+          component: 'Select',
+          componentProps: {
+            options: [
+              { label: 'Gemini（推荐）', value: 'gemini' },
+              { label: '通义千问', value: 'qwen' },
+              { label: 'OpenAI API', value: 'api' },
+              { label: '星火', value: 'xh' },
+              { label: 'Claude', value: 'claude' }
+            ]
           }
         },
         {
@@ -1082,7 +1103,7 @@ export function supportGuoba () {
           field: 'bymFuckList',
           label: '伪人模式反击的触发词',
           bottomHelpMessage: '请输入用于伪人模式下骂人反击的触发词，每个词组将被单独处理',
-          component: "GTags",
+          component: 'GTags',
           componentProps: {
             placeholder: '请输入反击触发词',
             allowAdd: true,
@@ -1092,11 +1113,11 @@ export function supportGuoba () {
               content: '添加新的反击触发词',
               okText: '添加',
               rules: [
-                { required: true, message: '触发词不能为空' },
-              ],
+                { required: true, message: '触发词不能为空' }
+              ]
             },
-                    valueParser: ((value) => value.split(',') || []),
-          },
+            valueParser: (value) => value.split(',') || []
+          }
         },
         {
           label: '以下为Azure chatGPT的配置',

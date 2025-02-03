@@ -21,6 +21,7 @@ import { initializeImageTool } from '../utils/tools/ImageTool.js'
 import { DailyNewsTool } from '../utils/tools/DailyNewsTool.js'
 import { SendMessageToSpecificGroupOrUserTool } from '../utils/tools/SendMessageToSpecificGroupOrUserTool.js'
 import { customSplitRegex, filterResponseChunk } from '../utils/text.js'
+import core from '../model/core.js'
 
 const DefaultConfig = {
   returnQQ: [],
@@ -70,7 +71,7 @@ export class bym extends plugin {
   async readConfigData(id, configList) {
     let data = {
       chatsList: 20,
-      propNum: 0,
+      propNum: Config.bymRate,
       notOfGroup: false,
       maxText: 50
     }
@@ -78,7 +79,7 @@ export class bym extends plugin {
     const matchedConfig = configList.find(item => String(item.id) === String(id))
     if (matchedConfig) {
       data.chatsList = parseInt(matchedConfig.chatslist) || data.chatsList
-      data.propNum = parseInt(matchedConfig.propNum) || data.propNum
+      data.propNum = parseInt(matchedConfig.propNum) ?? data.propNum
       data.notOfGroup = matchedConfig.notofgroup || data.notOfGroup
       data.maxText = parseInt(matchedConfig.maxtext) || data.maxText
     }
@@ -86,13 +87,28 @@ export class bym extends plugin {
   }
   /** 复读 */
   async bym(e) {
-    if (!Config.enableBYM) return false
+    if (!Config.enableBYM) {
+      return false
+    }
 
     const sender = e.sender.user_id
     const atBot = e.atme
+    const card = e.sender.card || e.sender.nickname
     const group = e.group_id
     let ALLRole = 'default'
 
+    let prop = Math.floor(Math.random() * 100)
+    if (Config.assistantLabel && e.msg?.includes(Config.assistantLabel)) {
+      prop = -1
+    }
+    let fuck = false
+    let candidate = Config.bymPreset
+
+
+    if (Config.bymFuckList?.find(i => e.msg?.includes(i))) {
+      fuck = true
+      candidate = candidate + Config.bymFuckPrompt
+    }
 
     if (Config.returnQQ.includes(sender)) return false
 
@@ -284,54 +300,34 @@ export class bym extends plugin {
 
         return Role;
       }
-      opt.system = Role
+      let system = Role
       logger.info('[ChatGPT-plugin][AUTO_AI]random chat hit')
-      let client = new CustomGoogleGeminiClient({
-        e,
-        userId: e.sender.user_id,
-        key: Config.getGeminiKey(),
-        model: Config.geminiModel,
-        baseUrl: Config.geminiBaseUrl,
-        debug: Config.debug
-      })
-      /**
-       * tools
-       * @type {(AbstractTool)[]}
-       */
-      const tools = [
-        new SearchVideoTool(),
-        new SerpImageTool(),
-        new SearchMusicTool(),
-        new SendAvatarTool(),
-        new SendVideoTool(),
-        new SendMusicTool(),
-        new SendPictureTool(),
-        new WebsiteTool(),
-        new WeatherTool(),
-        new DailyNewsTool(),
-        new SendMessageToSpecificGroupOrUserTool()
-      ]
-      if (Config.azSerpKey) {
-        tools.push(new SerpTool())
-      }
-      if (e.group.is_admin || e.group.is_owner) {
-        tools.push(new EditCardTool())
-        tools.push(new JinyanTool())
-        tools.push(new KickOutTool())
-      }
-      if (e.group.is_owner) {
-        tools.push(new SetTitleTool())
-      }
-
       const imageTool = await initializeImageTool(e, previousRole, bymGo)
       if (Config.AutoToDownImg) {
         tools.push(imageTool)
         const imagePrompt = await imageTool.getSystemPrompt()
-        opt.system += '\n' + imagePrompt
+        system += '\n' + imagePrompt
       }
 
-      client.addTools(tools)
-      let rsp = await client.sendMessage(e.msg, opt)
+      let rsp = await core.sendMessage(e.msg, {}, Config.bymMode, e, {
+        enableSmart: true,
+        system: {
+          api: system,
+          qwen: system,
+          bing: system,
+          claude: system,
+          claude2: system,
+          gemini: system,
+          xh: system
+        },
+        settings: {
+          replyPureTextCallback: msg => {
+            msg = filterResponseChunk(msg)
+            msg && e.reply(msg)
+          }
+        }
+      })
+      // let rsp = await client.sendMessage(e.msg, opt)
       let text = rsp.text
       let texts = customSplitRegex(text, /(?<!\?)[。？\n](?!\?)/, 3)
       // let texts = text.split(/(?<!\?)[。？\n](?!\?)/, 3)
