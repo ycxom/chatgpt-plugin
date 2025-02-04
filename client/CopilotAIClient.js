@@ -110,6 +110,7 @@ export class BingAIClient {
       if (this.debug) {
         logger.info('send msg: ', JSON.stringify(messagePayload))
       }
+      let _this = this
       // 设置超时机制，防止长时间未收到消息
       const timeout = setTimeout(() => {
         reject(new Error('No response from server within timeout period.'))
@@ -124,7 +125,10 @@ export class BingAIClient {
           // 如果收到 challenge，处理挑战
           this.handleChallenge(message)
             .then(() => {
-              resolve()
+              setTimeout(() => {
+                _this.ws.send(JSON.stringify(messagePayload))
+                resolve()
+              }, 500)
             })
             .catch(reject)
         } else {
