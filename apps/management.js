@@ -367,7 +367,7 @@ export class ChatgptManagement extends plugin {
     })
     this.task = [
       {
-        cron: '0 */2 * * * ?',
+        cron: '0 0 */2 * * ?',
         // cron: '*/1 * * * *',
         name: 'refreshBingAi',
         fnc: this.refreshBingAi,
