@@ -150,7 +150,7 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
       }
       : {
         role: 'user',
-        parts: [{ text }],
+        parts: text ? [{ text }] : [],
         id: idThis,
         parentMessageId: opt.parentMessageId || undefined
       }
@@ -173,6 +173,7 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
               data: imageData
             }
           })
+
         }
       }
     }

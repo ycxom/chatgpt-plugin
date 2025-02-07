@@ -2,6 +2,7 @@ import WebSocket from 'ws'
 import common from '../../../lib/common/common.js'
 import _ from 'lodash'
 import { pTimeout } from '../utils/common.js'
+import { Config } from '../utils/config.js'
 
 export class BingAIClient {
   constructor (accessToken, baseUrl = 'wss://copilot.microsoft.com', debug, _2captchaKey, clientId, scope, refreshToken, oid, reasoning = false) {
@@ -75,12 +76,12 @@ export class BingAIClient {
           logger.info('received message', String(message))
         })
       }
-      this.ws.on('close', (code, reason) => {
+      this.ws.on('close', async (code, reason) => {
         console.log('WebSocket connection closed. Code:', code, 'Reason:', reason)
 
         if (code === 401) {
           logger.error('token expired. try to refresh with refresh token')
-          this.doRefreshToken(this.clientId, this.scope, this.refreshToken, this.oid)
+          await this.doRefreshToken()
         }
       })
 
@@ -265,7 +266,10 @@ export class BingAIClient {
     return token
   }
 
-  async _generateConversationId () {
+  async _generateConversationId (times = 3) {
+    if (times < 0) {
+      throw new Error('max retry exceed, maybe refresh token error')
+    }
     const url = `${this.baseUrl}/c/api/conversations`
     const createConversationRsp = await fetch(url, {
       headers: {
@@ -277,6 +281,10 @@ export class BingAIClient {
       },
       method: 'POST'
     })
+    if (createConversationRsp.status === 401) {
+      await this.doRefreshToken()
+      return await this._generateConversationId(times - 1)
+    }
     const conversation = await createConversationRsp.json()
     return conversation.id
   }
@@ -316,7 +324,7 @@ export class BingAIClient {
    *   refresh_token: string
    * }>}
    */
-  async doRefreshToken (clientId, scope, refreshToken, oid) {
+  async doRefreshToken (clientId = this.clientId, scope = this.scope, refreshToken = this.refreshToken, oid = this.oid) {
     const myHeaders = new Headers()
     myHeaders.append('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0')
     myHeaders.append('priority', 'u=1, i')
@@ -350,6 +358,12 @@ export class BingAIClient {
     const tokenJson = await tokenResponse.json()
     if (this.debug) {
       logger.info(JSON.stringify(tokenJson))
+    }
+    this.accessToken = tokenJson.access_token
+    Config.bingAiToken = this.accessToken
+    if (tokenJson.refresh_token) {
+      this.refreshToken = tokenJson.refresh_token
+      Config.bingAiRefreshToken = this.refreshToken
     }
 
     return tokenJson
