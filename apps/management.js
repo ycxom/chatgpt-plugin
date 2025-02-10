@@ -1826,7 +1826,7 @@ azure语音：Azure 语音是微软 Azure 平台提供的一项语音服务，�
     }
     config.push(`\n当前星火模型：${Config.xhmode}`)
     config.push(`\n当前Claude模型：${Config.claudeApiModel}`)
-    config.push(`\n当前Gemini模型：${Config.geminiKey}`)
+    config.push(`\n当前Gemini模型：${Config.geminiModel}`)
     config.push(`\n当前Qwen模型：${Config.qwenModel}`)
     this.reply(config)
   }
