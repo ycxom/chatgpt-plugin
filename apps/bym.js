@@ -71,12 +71,12 @@ export class bym extends plugin {
     if (!Config.enableBYM) {
       return false
     }
-
     const sender = e.sender.user_id
     const atBot = e.atme
     const card = e.sender.card || e.sender.nickname
     const group = e.group_id
     let ALLRole = 'default'
+
 
     let prop = Math.floor(Math.random() * 100)
     if (Config.assistantLabel && e.msg?.includes(Config.assistantLabel)) {
@@ -291,7 +291,7 @@ export class bym extends plugin {
       }
 
       let rsp = await core.sendMessage(e.msg, {}, Config.bymMode, e, {
-        enableSmart: true,
+        enableSmart: Config.smartMode,
         system: {
           api: system,
           qwen: system,
