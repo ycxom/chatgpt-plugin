@@ -2,8 +2,8 @@ import { Config } from '../utils/config.js'
 import { getChatHistoryGroup } from '../utils/chat.js'
 import { convertFaces } from '../utils/face.js'
 import { customSplitRegex, filterResponseChunk } from '../utils/text.js'
-import core, {roleMap} from '../model/core.js'
-import {formatDate} from '../utils/common.js'
+import core, { roleMap } from '../model/core.js'
+import { formatDate } from '../utils/common.js'
 
 export class bym extends plugin {
   constructor () {
