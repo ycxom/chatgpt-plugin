@@ -152,7 +152,9 @@ class Core {
         messages: [],
         createdAt: Date.now()
       }
-      logger.info(JSON.stringify(conversations))
+      if (Config.debug) {
+        logger.debug(JSON.stringify(conversations))
+      }
       const previousCachedMessages = SydneyAIClient.getMessagesForConversation(conversations.messages, conversation.parentMessageId)
         .map((message) => {
           return {
