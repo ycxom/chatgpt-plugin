@@ -76,8 +76,8 @@ export class bym extends plugin {
             msg = filterResponseChunk(msg)
             msg && e.reply(msg)
           },
-          // 上下文在bym.js里构造，简化版。
-          enableGroupContext: Config.enableGroupContext
+          // 强制打开上下文，不然伪人笨死了
+          enableGroupContext: true
         }
       })
       // let rsp = await client.sendMessage(e.msg, opt)
