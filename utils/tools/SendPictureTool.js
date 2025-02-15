@@ -61,7 +61,7 @@ export class SendPictureTool extends AbstractTool {
         }
         for (let pic of pictures) {
           try {
-            await user.sendMsg(pictures)
+            await user.sendMsg(pic)
           } catch (err) {
             errs.push(pic.url)
           }
