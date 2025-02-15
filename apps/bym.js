@@ -81,7 +81,9 @@ export class bym extends plugin {
           replyPureTextCallback: msg => {
             msg = filterResponseChunk(msg)
             msg && e.reply(msg)
-          }
+          },
+          // 上下文在bym.js里构造，简化版。
+          enableGroupContext: false
         }
       })
       // let rsp = await client.sendMessage(e.msg, opt)
