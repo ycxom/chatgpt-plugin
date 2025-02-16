@@ -11,7 +11,8 @@ export class SerpIkechan8370Tool extends AbstractTool {
       },
       source: {
         type: 'string',
-        enum: ['google', 'bing', 'baidu']
+        enum: ['google', 'bing', 'baidu', 'duckduckgo'],
+        description: 'search source, default value is bing'
       }
     },
     required: ['q']
@@ -19,8 +20,8 @@ export class SerpIkechan8370Tool extends AbstractTool {
 
   func = async function (opts) {
     let { q, source } = opts
-    if (!source || !['google', 'bing', 'baidu'].includes(source)) {
-      source = 'baidu'
+    if (!source || !['google', 'bing', 'baidu', 'duckduckgo'].includes(source)) {
+      source = 'bing'
     }
     let serpRes = await fetch(`https://serp.ikechan8370.com/${source}?q=${encodeURIComponent(q)}&lang=zh-CN&limit=5`, {
       headers: {

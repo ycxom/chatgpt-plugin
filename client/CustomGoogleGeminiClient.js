@@ -222,11 +222,11 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
 
       // ANY要笑死人的效果
       let mode = opt.toolMode || 'AUTO'
-      let lastFuncName = opt.functionResponse?.name
+      let lastFuncName = (/** @type {FunctionResponse[] | undefined}**/ opt.functionResponse)?.map(rsp => rsp.name)
       const mustSendNextTurn = [
         'searchImage', 'searchMusic', 'searchVideo'
       ]
-      if (lastFuncName && mustSendNextTurn.includes(lastFuncName)) {
+      if (lastFuncName && lastFuncName?.find(name => mustSendNextTurn.includes(name))) {
         mode = 'ANY'
       }
       body.tool_config = {
