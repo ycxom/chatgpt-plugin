@@ -557,6 +557,7 @@ class Core {
             tools.push(new EditCardTool())
             tools.push(new JinyanTool())
             tools.push(new KickOutTool())
+            tools.push(new HandleMessageMsgTool())
           }
           if (e.group.is_owner) {
             tools.push(new SetTitleTool())
