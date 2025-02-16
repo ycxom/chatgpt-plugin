@@ -559,7 +559,8 @@ export function supportGuoba () {
         },
         {
           field: 'geminiForceToolKeywords',
-          label: 'gemini强制工具关键词，包含这里关键词的问题一定会调用工具。',
+          label: 'gemini强制工具关键词',
+          bottomHelpMessage: 'gemini强制工具关键词，包含这里关键词的问题一定会调用工具。',
           component: 'GTags',
           componentProps: {
             placeholder: '请输入强制工具关键词',
