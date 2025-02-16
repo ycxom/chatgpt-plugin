@@ -20,7 +20,7 @@ export class SerpIkechan8370Tool extends AbstractTool {
   func = async function (opts) {
     let { q, source } = opts
     if (!source || !['google', 'bing', 'baidu'].includes(source)) {
-      source = 'bing'
+      source = 'baidu'
     }
     let serpRes = await fetch(`https://serp.ikechan8370.com/${source}?q=${encodeURIComponent(q)}&lang=zh-CN&limit=5`, {
       headers: {
@@ -29,7 +29,7 @@ export class SerpIkechan8370Tool extends AbstractTool {
     })
     serpRes = await serpRes.json()
 
-    let res = serpRes.data
+    let res = serpRes.data || serpRes.results
     res?.forEach(r => {
       delete r?.rank
     })
