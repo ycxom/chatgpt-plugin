@@ -61,48 +61,49 @@ export class WebsiteTool extends AbstractTool {
         .replace(/\s{2}/g, '') // 多个空格只保留一个空格
         .replace('<!DOCTYPE html>', '') // 去除<!DOCTYPE>声明
 
-      if (mode === 'gemini') {
-        let client = new CustomGoogleGeminiClient({
-          e,
-          userId: e?.sender?.user_id,
-          key: Config.getGeminiKey(),
-          model: Config.geminiModel,
-          baseUrl: Config.geminiBaseUrl,
-          debug: Config.debug
-        })
-        const htmlContentSummaryRes = await client.sendMessage(`去除与主体内容无关的部分，从中整理出主体内容并转换成md格式，不需要主观描述性的语言与冗余的空白行。${text}`)
-        let htmlContentSummary = htmlContentSummaryRes.text
-        return `this is the main content of website:\n ${htmlContentSummary}`
-      } else {
-        let maxModelTokens = getMaxModelTokens(Config.model)
-        text = text.slice(0, Math.min(text.length, maxModelTokens - 1600))
-        let completionParams = {
-          // model: Config.model
-          model: 'gpt-3.5-turbo-16k'
-        }
-        let api = new ChatGPTAPI({
-          apiBaseUrl: Config.openAiBaseUrl,
-          apiKey: Config.apiKey,
-          debug: false,
-          completionParams,
-          fetch: (url, options = {}) => {
-            const defaultOptions = Config.proxy
-              ? {
-                  agent: proxy(Config.proxy)
-                }
-              : {}
-            const mergedOptions = {
-              ...defaultOptions,
-              ...options
-            }
-            return fetch(url, mergedOptions)
-          },
-          maxModelTokens
-        })
-        const htmlContentSummaryRes = await api.sendMessage(`去除与主体内容无关的部分，从中整理出主体内容并转换成md格式，不需要主观描述性的语言与冗余的空白行。${text}`, { completionParams })
-        let htmlContentSummary = htmlContentSummaryRes.text
-        return `this is the main content of website:\n ${htmlContentSummary}`
-      }
+      // if (mode === 'gemini') {
+      //   let client = new CustomGoogleGeminiClient({
+      //     e,
+      //     userId: e?.sender?.user_id,
+      //     key: Config.getGeminiKey(),
+      //     model: Config.geminiModel,
+      //     baseUrl: Config.geminiBaseUrl,
+      //     debug: Config.debug
+      //   })
+      //   const htmlContentSummaryRes = await client.sendMessage(`去除与主体内容无关的部分，从中整理出主体内容并转换成md格式，不需要主观描述性的语言与冗余的空白行。${text}`)
+      //   let htmlContentSummary = htmlContentSummaryRes.text
+      //   return `this is the main content of website:\n ${htmlContentSummary}`
+      // } else {
+      //   let maxModelTokens = getMaxModelTokens(Config.model)
+      //   text = text.slice(0, Math.min(text.length, maxModelTokens - 1600))
+      //   let completionParams = {
+      //     // model: Config.model
+      //     model: 'gpt-3.5-turbo-16k'
+      //   }
+      //   let api = new ChatGPTAPI({
+      //     apiBaseUrl: Config.openAiBaseUrl,
+      //     apiKey: Config.apiKey,
+      //     debug: false,
+      //     completionParams,
+      //     fetch: (url, options = {}) => {
+      //       const defaultOptions = Config.proxy
+      //         ? {
+      //             agent: proxy(Config.proxy)
+      //           }
+      //         : {}
+      //       const mergedOptions = {
+      //         ...defaultOptions,
+      //         ...options
+      //       }
+      //       return fetch(url, mergedOptions)
+      //     },
+      //     maxModelTokens
+      //   })
+      //   const htmlContentSummaryRes = await api.sendMessage(`去除与主体内容无关的部分，从中整理出主体内容并转换成md格式，不需要主观描述性的语言与冗余的空白行。${text}`, { completionParams })
+      //   let htmlContentSummary = htmlContentSummaryRes.text
+      //   return `this is the main content of website:\n ${htmlContentSummary}`
+      // }
+      return `the content of the website is:\n${text}`
     } catch (err) {
       return `failed to visit the website, error: ${err.toString()}`
     } finally {

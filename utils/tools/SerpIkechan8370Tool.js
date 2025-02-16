@@ -34,7 +34,7 @@ export class SerpIkechan8370Tool extends AbstractTool {
     res?.forEach(r => {
       delete r?.rank
     })
-    return `the search results are here in json format:\n${JSON.stringify(res)}`
+    return `the search results are here in json format:\n${JSON.stringify(res)} \n(Notice that these information are only available for you, the user cannot see them, you next answer should consider about the information)`
   }
 
   description = 'Useful when you want to search something from the Internet. If you don\'t know much about the user\'s question, prefer to search about it! If you want to know further details of a result, you can use website tool'
