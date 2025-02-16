@@ -312,7 +312,7 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
             let args = Object.assign(fc.args, {
               isAdmin,
               isOwner,
-              sender: this.e.sender,
+              sender: this.e.sender.user_id,
               mode: 'gemini'
             })
             functionResponse.response.content = await chosenTool.func(args, this.e)
