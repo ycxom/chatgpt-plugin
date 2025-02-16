@@ -229,6 +229,8 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
       if (lastFuncName && lastFuncName?.find(name => mustSendNextTurn.includes(name))) {
         mode = 'ANY'
       }
+      // 防止死循环。
+      delete opt.toolMode
       body.tool_config = {
         function_calling_config: {
           mode
