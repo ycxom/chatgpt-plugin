@@ -558,6 +558,25 @@ export function supportGuoba () {
           component: 'Input'
         },
         {
+          field: 'geminiForceToolKeywords',
+          label: 'gemini强制工具关键词，包含这里关键词的问题一定会调用工具。',
+          component: 'GTags',
+          componentProps: {
+            placeholder: '请输入强制工具关键词',
+            allowAdd: true,
+            allowDel: true,
+            showPrompt: true,
+            promptProps: {
+              content: '添加新的强制工具关键词',
+              okText: '添加',
+              rules: [
+                { required: true, message: '强制工具关键词不能为空' }
+              ]
+            },
+            valueParser: (value) => value.split(',') || []
+          }
+        },
+        {
           label: '以下为一些杂项配置。',
           component: 'Divider'
         },

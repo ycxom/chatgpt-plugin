@@ -228,6 +228,7 @@ const defaultConfig = {
   bingReasoning: false, // 是否深度思考
   apiMaxToken: 4096,
   enableToolPrivateSend: true, // 是否允许智能模式下私聊骚扰其他群友。主人不受影响。
+  geminiForceToolKeywords: [],
   version: 'v2.8.4'
 }
 const _path = process.cwd()
