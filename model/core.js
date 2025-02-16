@@ -127,7 +127,8 @@ class Core {
     },
     settings: {
       replyPureTextCallback: undefined,
-      enableGroupContext: Config.enableGroupContext
+      enableGroupContext: Config.enableGroupContext,
+      forceTool: false
     }
   }) {
     if (!conversation) {
@@ -567,6 +568,7 @@ class Core {
           await e.reply(msg, true)
         }
       })
+      option.toolMode = (opt.settings.forceTool || Config.geminiForceToolKeywords?.find(k => prompt.includes(k))) ? 'ANY' : 'AUTO'
       return await client.sendMessage(prompt, option)
     } else if (use === 'chatglm4') {
       const client = new ChatGLM4Client({
