@@ -8,7 +8,7 @@ export class GithubAPITool extends AbstractTool {
     properties: {
       q: {
         type: 'string',
-        description: 'search keyword'
+        description: 'search keyword. you should build it. If you want to find from specified repo, please must use repo:ORG/REPO as part of the keyword. For example, if you want to find the oldest unresolved Python bugs on Windows. Your query might look something like this: q=windows+label:bug+language:python+state:open&sort=created&order=asc'
       },
       type: {
         type: 'string',
@@ -21,7 +21,7 @@ export class GithubAPITool extends AbstractTool {
       },
       fullUrl: {
         type: 'string',
-        description: 'if type is custom, you need provide this, such as /repos/OWNER/REPO/actions/artifacts?name=NAME&page=2&per_page=1'
+        description: 'if type is custom, you need provide this, such as /repos/OWNER/REPO/actions/artifacts?name=NAME&page=2&per_page=1. if type is not custom, is will be ignored'
       }
     },
     required: ['q', 'type']
@@ -43,17 +43,17 @@ export class GithubAPITool extends AbstractTool {
       })
       serpRes = await serpRes.json()
 
-      res = serpRes.items
+      res = serpRes
     } else {
       let serpRes = await fetch(`${Config.githubAPI}${fullUrl}`, {
         headers
       })
       serpRes = await serpRes.json()
-      res = serpRes.items
+      res = serpRes
     }
 
     return `the search results are here in json format:\n${JSON.stringify(res)} \n(Notice that these information are only available for you, the user cannot see them, you next answer should consider about the information)`
   }
 
-  description = 'Useful when you want to search something from api.github.com. You can use preset search types or build your own url path with order, per_page, page and other params.'
+  description = 'Useful when you want to search something from api.github.com. You can use preset search types or build your own url path with order, per_page, page and other params. Automatically adjust the query and params if any error messages return.'
 }

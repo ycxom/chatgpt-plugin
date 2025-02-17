@@ -115,5 +115,5 @@ export class WebsiteTool extends AbstractTool {
     }
   }
 
-  description = 'Useful when you want to browse a website by url'
+  description = 'Useful when you want to browse a website by url, it can be a html or api url'
 }
