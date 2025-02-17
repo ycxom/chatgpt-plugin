@@ -281,10 +281,10 @@ export class CustomGoogleGeminiClient extends GoogleGeminiClient {
       // functionCall
       const functionCall = responseContent.parts.filter(i => i.functionCall).map(i => i.functionCall)
       const text = responseContent.parts.find(i => i.text)?.text
-      if (text) {
+      if (text && text.trim()) {
         // send reply first
-        logger.info('send message: ' + text)
-        opt.replyPureTextCallback && await opt.replyPureTextCallback(text)
+        logger.info('send message: ' + text.trim())
+        opt.replyPureTextCallback && await opt.replyPureTextCallback(text.trim())
       }
       let /** @type {FunctionResponse[]} **/ fcResults = []
       for (let fc of functionCall) {
