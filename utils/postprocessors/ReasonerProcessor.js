@@ -19,10 +19,11 @@ export class ReasonerProcessor extends AbstractPostProcessor {
    * }>}
    */
   async processInner (input) {
+    logger.debug('Running into ReasonerPostProcessor')
     const { text, thinkingText } = extractThinkingTextAndText(input.text)
     return {
       text,
-      thinking_text: input.thinking_text + thinkingText
+      thinking_text: (input.thinking_text ? input.thinking_text : '') + thinkingText
     }
   }
 }
