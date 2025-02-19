@@ -19,12 +19,10 @@ export class ReasonerProcessor extends AbstractPostProcessor {
    * }>}
    */
   async processInner (input) {
-    // eslint-disable-next-line camelcase
-    const { text, thinking_text } = extractThinkingTextAndText(input.text)
+    const { text, thinkingText } = extractThinkingTextAndText(input.text)
     return {
       text,
-      // eslint-disable-next-line camelcase
-      thinking_text: input.thinking_text + thinking_text
+      thinking_text: input.thinking_text + thinkingText
     }
   }
 }
