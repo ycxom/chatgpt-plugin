@@ -259,7 +259,8 @@ class Core {
           stream: false,
           parentMessageId: conversation.parentMessageId,
           conversationId: conversation.conversationId,
-          system: opt.system.claude
+          system: opt.system.claude,
+          max_tokens: Config.apiMaxToken
         }
         let img = await getImg(e)
         if (img && img.length > 0) {
